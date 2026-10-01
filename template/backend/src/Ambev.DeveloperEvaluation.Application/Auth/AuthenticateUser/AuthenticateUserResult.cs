@@ -13,7 +13,7 @@ public sealed class AuthenticateUserResult
     /// <summary>
     /// Gets or sets the user's unique identifier
     /// </summary>
-    public Guid Id { get; set; }
+    public int Id { get; set; }
 
     /// <summary>
     /// Gets or sets the user's name

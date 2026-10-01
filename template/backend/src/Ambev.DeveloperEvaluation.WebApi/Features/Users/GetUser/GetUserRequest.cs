@@ -8,5 +8,5 @@ public class GetUserRequest
     /// <summary>
     /// The unique identifier of the user to retrieve
     /// </summary>
-    public Guid Id { get; set; }
+    public int Id { get; set; }
 }
