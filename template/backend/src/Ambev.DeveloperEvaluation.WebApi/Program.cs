@@ -5,9 +5,11 @@ using Ambev.DeveloperEvaluation.Common.Security;
 using Ambev.DeveloperEvaluation.Common.Validation;
 using Ambev.DeveloperEvaluation.IoC;
 using Ambev.DeveloperEvaluation.ORM;
+using Ambev.DeveloperEvaluation.WebApi.Common;
 using Ambev.DeveloperEvaluation.WebApi.Middleware;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc;
 using Serilog;
 
 namespace Ambev.DeveloperEvaluation.WebApi;
@@ -23,7 +25,23 @@ public class Program
             WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
             builder.AddDefaultLogging();
 
-            builder.Services.AddControllers();
+            builder.Services.AddControllers()
+                .ConfigureApiBehaviorOptions(options =>
+                {
+                    options.InvalidModelStateResponseFactory = context =>
+                    {
+                        var detail = string.Join("; ", context.ModelState
+                            .SelectMany(entry => entry.Value?.Errors ?? [])
+                            .Select(error => error.ErrorMessage));
+
+                        return new BadRequestObjectResult(new ApiErrorResponse
+                        {
+                            Type = "ValidationError",
+                            Error = "Invalid input data",
+                            Detail = string.IsNullOrWhiteSpace(detail) ? "The request is invalid." : detail
+                        });
+                    };
+                });
             builder.Services.AddEndpointsApiExplorer();
 
             builder.AddBasicHealthChecks();

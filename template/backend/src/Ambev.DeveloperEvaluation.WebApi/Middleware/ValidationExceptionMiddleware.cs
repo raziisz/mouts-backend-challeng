@@ -1,70 +1,81 @@
-﻿using Ambev.DeveloperEvaluation.Common.Validation;
+using Ambev.DeveloperEvaluation.Domain.Exceptions;
 using Ambev.DeveloperEvaluation.WebApi.Common;
 using FluentValidation;
-using System.Text.Json;
-using Ambev.DeveloperEvaluation.Domain.Exceptions;
 
-namespace Ambev.DeveloperEvaluation.WebApi.Middleware
+namespace Ambev.DeveloperEvaluation.WebApi.Middleware;
+
+public sealed class ValidationExceptionMiddleware
 {
-    public class ValidationExceptionMiddleware
+    private readonly RequestDelegate _next;
+
+    public ValidationExceptionMiddleware(RequestDelegate next)
     {
-        private readonly RequestDelegate _next;
+        _next = next;
+    }
 
-        public ValidationExceptionMiddleware(RequestDelegate next)
+    public async Task InvokeAsync(HttpContext context)
+    {
+        try
         {
-            _next = next;
+            await _next(context);
         }
-
-        public async Task InvokeAsync(HttpContext context)
+        catch (ValidationException exception)
         {
-            try
-            {
-                await _next(context);
-            }
-            catch (ValidationException ex)
-            {
-                await HandleValidationExceptionAsync(context, ex);
-            }
-            catch (DomainException ex)
-            {
-                await WriteErrorAsync(context, StatusCodes.Status409Conflict, "BusinessRuleViolation", "Business rule violation", ex.Message);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                await WriteErrorAsync(context, StatusCodes.Status404NotFound, "ResourceNotFound", "Resource not found", ex.Message);
-            }
-            catch (InvalidOperationException ex)
-            {
-                await WriteErrorAsync(context, StatusCodes.Status409Conflict, "Conflict", "Operation cannot be completed", ex.Message);
-            }
+            await WriteErrorAsync(
+                context,
+                StatusCodes.Status400BadRequest,
+                "ValidationError",
+                "Invalid input data",
+                string.Join("; ", exception.Errors.Select(error => $"{error.PropertyName}: {error.ErrorMessage}")));
         }
-
-        private static Task WriteErrorAsync(HttpContext context, int statusCode, string type, string error, string detail)
+        catch (UnauthorizedAccessException exception)
         {
-            context.Response.ContentType = "application/json";
-            context.Response.StatusCode = statusCode;
-            return context.Response.WriteAsync(JsonSerializer.Serialize(new { type, error, detail }, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }));
+            await WriteErrorAsync(
+                context,
+                StatusCodes.Status401Unauthorized,
+                "AuthenticationError",
+                "Authentication failed",
+                exception.Message);
         }
-
-        private static Task HandleValidationExceptionAsync(HttpContext context, ValidationException exception)
+        catch (DomainException exception)
         {
-            context.Response.ContentType = "application/json";
-            context.Response.StatusCode = StatusCodes.Status400BadRequest;
-
-            var response = new ApiResponse
-            {
-                Success = false,
-                Message = "Validation Failed",
-                Errors = exception.Errors
-                    .Select(error => (ValidationErrorDetail)error)
-            };
-
-            var jsonOptions = new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            };
-
-            return context.Response.WriteAsync(JsonSerializer.Serialize(response, jsonOptions));
+            await WriteErrorAsync(
+                context,
+                StatusCodes.Status409Conflict,
+                "BusinessRuleViolation",
+                "Business rule violation",
+                exception.Message);
         }
+        catch (KeyNotFoundException exception)
+        {
+            await WriteErrorAsync(
+                context,
+                StatusCodes.Status404NotFound,
+                "ResourceNotFound",
+                "Resource not found",
+                exception.Message);
+        }
+        catch (InvalidOperationException exception)
+        {
+            await WriteErrorAsync(
+                context,
+                StatusCodes.Status409Conflict,
+                "Conflict",
+                "Operation cannot be completed",
+                exception.Message);
+        }
+    }
+
+    private static async Task WriteErrorAsync(HttpContext context, int statusCode, string type, string error, string detail)
+    {
+        context.Response.Clear();
+        context.Response.StatusCode = statusCode;
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsJsonAsync(new ApiErrorResponse
+        {
+            Type = type,
+            Error = error,
+            Detail = detail
+        });
     }
 }

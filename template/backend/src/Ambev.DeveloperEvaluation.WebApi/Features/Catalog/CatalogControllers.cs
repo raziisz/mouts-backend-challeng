@@ -34,7 +34,7 @@ public class ProductsController(IMediator mediator) : ControllerBase
     public async Task<IActionResult> Update(int id, ProductRequest request, CancellationToken cancellationToken) => Ok(await mediator.Send(request.ToCommand(id), cancellationToken));
 
     [HttpDelete("{id:int}")]
-    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken) { if (!await mediator.Send(new DeleteProductCommand(id), cancellationToken)) return NotFound(); return Ok(new { message = "Product deleted successfully" }); }
+    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken) { if (!await mediator.Send(new DeleteProductCommand(id), cancellationToken)) return NotFound(new ApiErrorResponse { Type = "ResourceNotFound", Error = "Resource not found", Detail = $"Product {id} was not found." }); return Ok(new { message = "Product deleted successfully" }); }
 
 }
 
@@ -58,7 +58,7 @@ public class CartsController(IMediator mediator) : ControllerBase
     [HttpGet("{id:int}")] public async Task<IActionResult> Get(int id, CancellationToken cancellationToken) => Ok(await mediator.Send(new GetCartQuery(id), cancellationToken));
     [HttpPost] public async Task<IActionResult> Create(CartRequest request, CancellationToken cancellationToken) { var result = await mediator.Send(request.ToCreate(), cancellationToken); return CreatedAtAction(nameof(Get), new { id = result.Id }, result); }
     [HttpPut("{id:int}")] public async Task<IActionResult> Update(int id, CartRequest request, CancellationToken cancellationToken) => Ok(await mediator.Send(request.ToUpdate(id), cancellationToken));
-    [HttpDelete("{id:int}")] public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken) { if (!await mediator.Send(new DeleteCartCommand(id), cancellationToken)) return NotFound(); return Ok(new { message = "Cart deleted successfully" }); }
+    [HttpDelete("{id:int}")] public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken) { if (!await mediator.Send(new DeleteCartCommand(id), cancellationToken)) return NotFound(new ApiErrorResponse { Type = "ResourceNotFound", Error = "Resource not found", Detail = $"Cart {id} was not found." }); return Ok(new { message = "Cart deleted successfully" }); }
 }
 public sealed class CartRequest
 {
