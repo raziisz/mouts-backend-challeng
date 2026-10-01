@@ -124,13 +124,7 @@ public class UsersController : BaseController
     [HttpGet]
     public async Task<IActionResult> ListUsers([FromQuery(Name = "_page")] int page = 1, [FromQuery(Name = "_size")] int size = 10, [FromQuery(Name = "_order")] string? order = null, string? username = null, string? email = null, UserStatus? status = null, UserRole? role = null, CancellationToken cancellationToken = default)
     {
-        var users = (await _mediator.Send(new ListUsersQuery(), cancellationToken)).AsEnumerable();
-        if (!string.IsNullOrWhiteSpace(username)) users = users.Where(x => TextFilter.Matches(x.Username, username));
-        if (!string.IsNullOrWhiteSpace(email)) users = users.Where(x => TextFilter.Matches(x.Email, email));
-        if (status.HasValue) users = users.Where(x => x.Status == status.Value);
-        if (role.HasValue) users = users.Where(x => x.Role == role.Value);
-
-        return Ok(PagedResultFactory.Create(users, page, size));
+        return Ok(await _mediator.Send(new ListUsersQuery(page, size, order, username, email, null, status, role), cancellationToken));
     }
 
     [HttpPut("{id}")]

@@ -16,6 +16,7 @@
 		<PackageReference Include="MongoDB.Driver" Version="2.29.0" />
 	</ItemGroup>
 	<ItemGroup>
+		<ProjectReference Include="..\Ambev.DeveloperEvaluation.Common\Ambev.DeveloperEvaluation.Common.csproj" />
 		<ProjectReference Include="..\Ambev.DeveloperEvaluation.Domain\Ambev.DeveloperEvaluation.Domain.csproj" />
 	</ItemGroup>
 </Project>

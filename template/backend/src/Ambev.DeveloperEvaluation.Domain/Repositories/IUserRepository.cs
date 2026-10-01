@@ -1,4 +1,5 @@
 using Ambev.DeveloperEvaluation.Domain.Entities;
+using Ambev.DeveloperEvaluation.Common.Persistence;
 
 namespace Ambev.DeveloperEvaluation.Domain.Repositories;
 
@@ -32,7 +33,7 @@ public interface IUserRepository
     Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
     Task<User?> GetByUsernameAsync(string username, CancellationToken cancellationToken = default);
 
-    Task<IReadOnlyList<User>> ListAsync(CancellationToken cancellationToken = default);
+    Task<PagedResult<User>> ListAsync(UserListQuery query, CancellationToken cancellationToken = default);
 
     Task UpdateAsync(User user, CancellationToken cancellationToken = default);
 

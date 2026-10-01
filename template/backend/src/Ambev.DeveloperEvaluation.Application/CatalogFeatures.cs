@@ -1,6 +1,7 @@
 using Ambev.DeveloperEvaluation.Domain.Entities;
 using Ambev.DeveloperEvaluation.Domain.Repositories;
 using Ambev.DeveloperEvaluation.Domain.Events;
+using Ambev.DeveloperEvaluation.Common.Persistence;
 using MediatR;
 
 namespace Ambev.DeveloperEvaluation.Application.Products
@@ -19,7 +20,8 @@ namespace Ambev.DeveloperEvaluation.Application.Products
     public class RatingResult { public decimal Rate { get; set; } public int Count { get; set; } }
 
     public record CreateProductCommand(string Title, decimal Price, string Description, string Category, string Image, decimal RatingRate, int RatingCount) : IRequest<ProductResult>;
-    public record GetProductsQuery : IRequest<IReadOnlyList<ProductResult>>;
+    public record GetProductsQuery(int Page = 1, int Size = 10, string? Order = null, string? Title = null, string? Category = null, decimal? Price = null, decimal? MinPrice = null, decimal? MaxPrice = null) : IRequest<PagedResult<ProductResult>>;
+    public record GetProductCategoriesQuery : IRequest<IReadOnlyList<string>>;
     public record GetProductQuery(int Id) : IRequest<ProductResult>;
     public record UpdateProductCommand(int Id, string Title, decimal Price, string Description, string Category, string Image, decimal RatingRate, int RatingCount) : IRequest<ProductResult>;
     public record DeleteProductCommand(int Id) : IRequest<bool>;
@@ -27,6 +29,7 @@ namespace Ambev.DeveloperEvaluation.Application.Products
     public static class ProductMappings
     {
         public static ProductResult ToResult(Product x) => new() { Id = x.Id, Title = x.Title, Price = x.Price, Description = x.Description, Category = x.Category, Image = x.Image, Rating = new RatingResult { Rate = x.RatingRate, Count = x.RatingCount } };
+        public static PagedResult<ProductResult> ToPage(PagedResult<Product> page) => new() { Data = page.Data.Select(ToResult).ToList(), TotalItems = page.TotalItems, CurrentPage = page.CurrentPage, TotalPages = page.TotalPages };
     }
 
     public class CreateProductHandler(IProductRepository repository) : IRequestHandler<CreateProductCommand, ProductResult>
@@ -38,9 +41,13 @@ namespace Ambev.DeveloperEvaluation.Application.Products
             return ProductMappings.ToResult(await repository.CreateAsync(product, cancellationToken));
         }
     }
-    public class GetProductsHandler(IProductRepository repository) : IRequestHandler<GetProductsQuery, IReadOnlyList<ProductResult>>
+    public class GetProductsHandler(IProductRepository repository) : IRequestHandler<GetProductsQuery, PagedResult<ProductResult>>
     {
-        public async Task<IReadOnlyList<ProductResult>> Handle(GetProductsQuery request, CancellationToken cancellationToken) => (await repository.ListAsync(cancellationToken)).Select(ProductMappings.ToResult).ToList();
+        public async Task<PagedResult<ProductResult>> Handle(GetProductsQuery request, CancellationToken cancellationToken) => ProductMappings.ToPage(await repository.ListAsync(new ProductListQuery(new PageQuery(request.Page, request.Size, request.Order), request.Title, request.Category, request.Price, request.MinPrice, request.MaxPrice), cancellationToken));
+    }
+    public class GetProductCategoriesHandler(IProductRepository repository) : IRequestHandler<GetProductCategoriesQuery, IReadOnlyList<string>>
+    {
+        public Task<IReadOnlyList<string>> Handle(GetProductCategoriesQuery request, CancellationToken cancellationToken) => repository.ListCategoriesAsync(cancellationToken);
     }
     public class GetProductHandler(IProductRepository repository) : IRequestHandler<GetProductQuery, ProductResult>
     {
@@ -68,7 +75,7 @@ namespace Ambev.DeveloperEvaluation.Application.Carts
     public class CartItemResult { public int ProductId { get; set; } public int Quantity { get; set; } }
     public class CartResult { public int Id { get; set; } public int UserId { get; set; } public DateTime Date { get; set; } public List<CartItemResult> Products { get; set; } = []; }
     public record CreateCartCommand(int UserId, DateTime Date, List<CartItemResult> Products) : IRequest<CartResult>;
-    public record GetCartsQuery : IRequest<IReadOnlyList<CartResult>>;
+    public record GetCartsQuery(int Page = 1, int Size = 10, string? Order = null, int? UserId = null, DateTime? Date = null, DateTime? MinDate = null, DateTime? MaxDate = null) : IRequest<PagedResult<CartResult>>;
     public record GetCartQuery(int Id) : IRequest<CartResult>;
     public record UpdateCartCommand(int Id, int UserId, DateTime Date, List<CartItemResult> Products) : IRequest<CartResult>;
     public record DeleteCartCommand(int Id) : IRequest<bool>;
@@ -76,15 +83,16 @@ namespace Ambev.DeveloperEvaluation.Application.Carts
     public static class CartMappings
     {
         public static CartResult ToResult(Cart x) => new() { Id = x.Id, UserId = x.UserId, Date = x.Date, Products = x.Items.Select(i => new CartItemResult { ProductId = i.ProductId, Quantity = i.Quantity }).ToList() };
+        public static PagedResult<CartResult> ToPage(PagedResult<Cart> page) => new() { Data = page.Data.Select(ToResult).ToList(), TotalItems = page.TotalItems, CurrentPage = page.CurrentPage, TotalPages = page.TotalPages };
         public static Cart ToEntity(int userId, DateTime date, IEnumerable<CartItemResult> products) { var cart = new Cart { UserId = userId, Date = date }; cart.ReplaceItems(products.Select(x => new CartItem { ProductId = x.ProductId, Quantity = x.Quantity })); return cart; }
     }
     public class CreateCartHandler(ICartRepository repository) : IRequestHandler<CreateCartCommand, CartResult>
     {
         public async Task<CartResult> Handle(CreateCartCommand request, CancellationToken cancellationToken) => CartMappings.ToResult(await repository.CreateAsync(CartMappings.ToEntity(request.UserId, request.Date, request.Products), cancellationToken));
     }
-    public class GetCartsHandler(ICartRepository repository) : IRequestHandler<GetCartsQuery, IReadOnlyList<CartResult>>
+    public class GetCartsHandler(ICartRepository repository) : IRequestHandler<GetCartsQuery, PagedResult<CartResult>>
     {
-        public async Task<IReadOnlyList<CartResult>> Handle(GetCartsQuery request, CancellationToken cancellationToken) => (await repository.ListAsync(cancellationToken)).Select(CartMappings.ToResult).ToList();
+        public async Task<PagedResult<CartResult>> Handle(GetCartsQuery request, CancellationToken cancellationToken) => CartMappings.ToPage(await repository.ListAsync(new CartListQuery(new PageQuery(request.Page, request.Size, request.Order), request.UserId, request.Date, request.MinDate, request.MaxDate), cancellationToken));
     }
     public class GetCartHandler(ICartRepository repository) : IRequestHandler<GetCartQuery, CartResult>
     {
@@ -112,7 +120,7 @@ namespace Ambev.DeveloperEvaluation.Application.Sales
     public class SaleResult { public int Id { get; set; } public string SaleNumber { get; set; } = string.Empty; public DateTime Date { get; set; } public ExternalIdentity Customer { get; set; } = new(); public ExternalIdentity Branch { get; set; } = new(); public string Status { get; set; } = string.Empty; public decimal TotalAmount { get; set; } public List<SaleItemResult> Products { get; set; } = []; }
     public class SaleItemInputModel { public int ProductId { get; set; } public string ProductDescription { get; set; } = string.Empty; public decimal UnitPrice { get; set; } public int Quantity { get; set; } }
     public record CreateSaleCommand(string SaleNumber, DateTime Date, int CustomerId, string CustomerDescription, int BranchId, string BranchDescription, List<SaleItemInputModel> Products) : IRequest<SaleResult>;
-    public record GetSalesQuery : IRequest<IReadOnlyList<SaleResult>>;
+    public record GetSalesQuery(int Page = 1, int Size = 10, string? Order = null, string? SaleNumber = null, string? Status = null, DateTime? Date = null, DateTime? MinDate = null, DateTime? MaxDate = null) : IRequest<PagedResult<SaleResult>>;
     public record GetSaleQuery(int Id) : IRequest<SaleResult>;
     public record UpdateSaleCommand(int Id, string SaleNumber, DateTime Date, int CustomerId, string CustomerDescription, int BranchId, string BranchDescription, List<SaleItemInputModel> Products) : IRequest<SaleResult>;
     public record CancelSaleCommand(int Id) : IRequest<SaleResult>;
@@ -121,6 +129,7 @@ namespace Ambev.DeveloperEvaluation.Application.Sales
     public static class SaleMappings
     {
         public static SaleResult ToResult(Sale x) => new() { Id = x.Id, SaleNumber = x.SaleNumber, Date = x.Date, Customer = x.Customer, Branch = x.Branch, Status = x.Status.ToString(), TotalAmount = x.TotalAmount, Products = x.Items.Select(i => new SaleItemResult { Id = i.Id, ProductId = i.ProductId, ProductDescription = i.ProductDescription, Quantity = i.Quantity, UnitPrice = i.UnitPrice, DiscountRate = i.DiscountRate, DiscountAmount = i.DiscountAmount, TotalAmount = i.TotalAmount, IsCancelled = i.IsCancelled }).ToList() };
+        public static PagedResult<SaleResult> ToPage(PagedResult<Sale> page) => new() { Data = page.Data.Select(ToResult).ToList(), TotalItems = page.TotalItems, CurrentPage = page.CurrentPage, TotalPages = page.TotalPages };
         public static Sale ToEntity(string number, DateTime date, int customerId, string customerDescription, int branchId, string branchDescription, IEnumerable<SaleItemInputModel> products)
         {
             var sale = new Sale { SaleNumber = number, Date = date, Customer = new ExternalIdentity { Id = customerId, Description = customerDescription }, Branch = new ExternalIdentity { Id = branchId, Description = branchDescription } };
@@ -137,9 +146,9 @@ namespace Ambev.DeveloperEvaluation.Application.Sales
             return SaleMappings.ToResult(sale);
         }
     }
-    public class GetSalesHandler(ISaleRepository repository) : IRequestHandler<GetSalesQuery, IReadOnlyList<SaleResult>>
+    public class GetSalesHandler(ISaleRepository repository) : IRequestHandler<GetSalesQuery, PagedResult<SaleResult>>
     {
-        public async Task<IReadOnlyList<SaleResult>> Handle(GetSalesQuery request, CancellationToken cancellationToken) => (await repository.ListAsync(cancellationToken)).Select(SaleMappings.ToResult).ToList();
+        public async Task<PagedResult<SaleResult>> Handle(GetSalesQuery request, CancellationToken cancellationToken) => SaleMappings.ToPage(await repository.ListAsync(new SaleListQuery(new PageQuery(request.Page, request.Size, request.Order), request.SaleNumber, request.Status, request.Date, request.MinDate, request.MaxDate), cancellationToken));
     }
     public class GetSaleHandler(ISaleRepository repository) : IRequestHandler<GetSaleQuery, SaleResult>
     {
