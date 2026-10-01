@@ -16,7 +16,6 @@
         "id": "integer",
         "email": "string",
         "username": "string",
-        "password": "string",
         "name": {
           "firstname": "string",
           "lastname": "string"
@@ -75,7 +74,6 @@
     "id": "integer",
     "email": "string",
     "username": "string",
-    "password": "string",
     "name": {
       "firstname": "string",
       "lastname": "string"
@@ -106,7 +104,6 @@
     "id": "integer",
     "email": "string",
     "username": "string",
-    "password": "string",
     "name": {
       "firstname": "string",
       "lastname": "string"
@@ -136,7 +133,6 @@
   {
     "email": "string",
     "username": "string",
-    "password": "string",
     "name": {
       "firstname": "string",
       "lastname": "string"
@@ -162,7 +158,6 @@
     "id": "integer",
     "email": "string",
     "username": "string",
-    "password": "string",
     "name": {
       "firstname": "string",
       "lastname": "string"
@@ -193,7 +188,6 @@
     "id": "integer",
     "email": "string",
     "username": "string",
-    "password": "string",
     "name": {
       "firstname": "string",
       "lastname": "string"

@@ -131,7 +131,7 @@ public class UsersController : BaseController
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateUser([FromRoute] int id, [FromBody] UpdateUserRequest request, CancellationToken cancellationToken)
     {
-        return Ok(await _mediator.Send(new UpdateUserCommand(id, request.Username, request.Email, request.Phone, request.Password, request.Status, request.Role), cancellationToken));
+        return Ok(await _mediator.Send(new UpdateUserCommand(id, request.Username, request.Email, request.Phone, new Application.Users.UserAddressModel { City = request.Address.City, Street = request.Address.Street, Number = request.Address.Number, Zipcode = request.Address.Zipcode, Geolocation = new Application.Users.UserGeolocationModel { Lat = request.Address.Geolocation.Lat, Long = request.Address.Geolocation.Long } }, request.Status, request.Role), cancellationToken));
     }
 }
 
@@ -140,7 +140,7 @@ public sealed class UpdateUserRequest
     public string Username { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string Phone { get; set; } = string.Empty;
-    public string Password { get; set; } = string.Empty;
+    public UserAddressRequest Address { get; set; } = new();
     public UserStatus Status { get; set; }
     public UserRole Role { get; set; }
 }

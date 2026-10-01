@@ -1,5 +1,6 @@
 using AutoMapper;
 using Ambev.DeveloperEvaluation.Domain.Entities;
+using Ambev.DeveloperEvaluation.Application.Users;
 
 namespace Ambev.DeveloperEvaluation.Application.Users.GetUser;
 
@@ -13,6 +14,8 @@ public class GetUserProfile : Profile
     /// </summary>
     public GetUserProfile()
     {
+        CreateMap<Geolocation, UserGeolocationModel>();
+        CreateMap<Address, UserAddressModel>();
         CreateMap<User, GetUserResult>();
     }
 }

@@ -2,6 +2,8 @@
 
 namespace Ambev.DeveloperEvaluation.WebApi.Features.Users.CreateUser;
 
+using Ambev.DeveloperEvaluation.WebApi.Features.Users;
+
 /// <summary>
 /// Represents a request to create a new user in the system.
 /// </summary>
@@ -26,6 +28,8 @@ public class CreateUserRequest
     /// Gets or sets the email address. Must be a valid email format.
     /// </summary>
     public string Email { get; set; } = string.Empty;
+
+    public UserAddressRequest Address { get; set; } = new();
 
     /// <summary>
     /// Gets or sets the initial status of the user account.

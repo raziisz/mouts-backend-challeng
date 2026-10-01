@@ -38,6 +38,8 @@ public class User : BaseEntity, IUser
     /// </summary>
     public string Password { get; set; } = string.Empty;
 
+    public Address Address { get; set; } = new();
+
     /// <summary>
     /// Gets the user's role in the system.
     /// Determines the user's permissions and access levels.

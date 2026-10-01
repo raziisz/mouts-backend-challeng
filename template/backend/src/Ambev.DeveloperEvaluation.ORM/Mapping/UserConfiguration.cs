@@ -19,6 +19,19 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.Email).IsRequired().HasMaxLength(100);
         builder.Property(u => u.Phone).HasMaxLength(20);
 
+        builder.OwnsOne(u => u.Address, address =>
+        {
+            address.Property(x => x.City).HasMaxLength(100).IsRequired();
+            address.Property(x => x.Street).HasMaxLength(150).IsRequired();
+            address.Property(x => x.Number).IsRequired();
+            address.Property(x => x.Zipcode).HasMaxLength(20).IsRequired();
+            address.OwnsOne(x => x.Geolocation, geolocation =>
+            {
+                geolocation.Property(x => x.Lat).HasMaxLength(50).IsRequired();
+                geolocation.Property(x => x.Long).HasMaxLength(50).IsRequired();
+            });
+        });
+
         builder.Property(u => u.Status)
             .HasConversion<string>()
             .HasMaxLength(20);
