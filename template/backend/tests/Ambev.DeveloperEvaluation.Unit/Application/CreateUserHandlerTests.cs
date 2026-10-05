@@ -89,6 +89,17 @@ public class CreateUserHandlerTests
         await act.Should().ThrowAsync<FluentValidation.ValidationException>();
     }
 
+    [Fact(DisplayName = "Given invalid address When creating user Then throws validation exception")]
+    public async Task Handle_InvalidAddress_ThrowsValidationException()
+    {
+        var command = CreateUserHandlerTestData.GenerateValidCommand();
+        command.Address.Number = 0;
+
+        var act = () => _handler.Handle(command, CancellationToken.None);
+
+        await act.Should().ThrowAsync<FluentValidation.ValidationException>();
+    }
+
     /// <summary>
     /// Tests that the password is hashed before saving the user.
     /// </summary>

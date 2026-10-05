@@ -112,6 +112,17 @@ public sealed class EndpointCoverageFunctionalTests(FunctionalApiFixture fixture
 
         try
         {
+            using var invalidAddressCreate = await fixture.SendAsync(
+                HttpMethod.Post,
+                "/api/users",
+                adminToken,
+                UserBody($"coverage-invalid-address-{suffix}", $"coverage-invalid-address-{suffix}@localhost.com", "+5592987777778", addressNumber: 0));
+            await FunctionalApiFixture.AssertErrorResponseAsync(
+                invalidAddressCreate,
+                HttpStatusCode.BadRequest,
+                "ValidationError",
+                "Invalid input data");
+
             using var filteredUsers = await fixture.SendAsync(
                 HttpMethod.Get,
                 $"/api/users?username={Uri.EscapeDataString(firstUsername + "*")}&email={Uri.EscapeDataString(firstEmail)}&phone=%2B5592988888888&status=Active&role=Customer&_order=username%20asc",
@@ -297,7 +308,7 @@ public sealed class EndpointCoverageFunctionalTests(FunctionalApiFixture fixture
         return document.RootElement.GetProperty("id").GetInt32();
     }
 
-    private static object UserBody(string username, string email, string phone) => new
+    private static object UserBody(string username, string email, string phone, int addressNumber = 10) => new
     {
         username,
         email,
@@ -307,7 +318,7 @@ public sealed class EndpointCoverageFunctionalTests(FunctionalApiFixture fixture
         {
             city = "Manaus",
             street = "Coverage Street",
-            number = 10,
+            number = addressNumber,
             zipcode = "69000-000",
             geolocation = new { lat = "-3.1", @long = "-60.0" }
         },

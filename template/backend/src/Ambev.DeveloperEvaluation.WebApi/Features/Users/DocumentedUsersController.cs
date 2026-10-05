@@ -30,7 +30,29 @@ public class DocumentedUsersController(IMediator mediator) : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create(CreateUserRequest request, CancellationToken cancellationToken)
     {
-        var command = new CreateUserCommand { Username = request.Username, Password = request.Password, Phone = request.Phone, Email = request.Email, Name = new UserNameModel { Firstname = request.Name.Firstname, Lastname = request.Name.Lastname }, Address = new UserAddressModel { City = request.Address.City, Street = request.Address.Street, Number = request.Address.Number, Zipcode = request.Address.Zipcode, Geolocation = new UserGeolocationModel { Lat = request.Address.Geolocation.Lat, Long = request.Address.Geolocation.Long } }, Status = request.Status, Role = request.Role };
+        request ??= new CreateUserRequest();
+        var name = request.Name ?? new UserNameRequest();
+        var address = request.Address ?? new UserAddressRequest();
+        var geolocation = address.Geolocation ?? new UserGeolocationRequest();
+
+        var command = new CreateUserCommand
+        {
+            Username = request.Username,
+            Password = request.Password,
+            Phone = request.Phone,
+            Email = request.Email,
+            Name = new UserNameModel { Firstname = name.Firstname, Lastname = name.Lastname },
+            Address = new UserAddressModel
+            {
+                City = address.City,
+                Street = address.Street,
+                Number = address.Number,
+                Zipcode = address.Zipcode,
+                Geolocation = new UserGeolocationModel { Lat = geolocation.Lat, Long = geolocation.Long }
+            },
+            Status = request.Status,
+            Role = request.Role
+        };
         var result = await mediator.Send(command, cancellationToken);
         return Created($"/api/users/{result.Id}", result);
     }

@@ -26,6 +26,7 @@ public class CreateUserCommandValidator : AbstractValidator<CreateUserCommand>
         RuleFor(user => user.Email).SetValidator(new EmailValidator());
         RuleFor(user => user.Username).NotEmpty().Length(3, 50);
         RuleFor(user => user.Name).NotNull().SetValidator(new UserNameModelValidator());
+        RuleFor(user => user.Address).NotNull().SetValidator(new UserAddressModelValidator());
         RuleFor(user => user.Password).SetValidator(new PasswordValidator());
         RuleFor(user => user.Phone).Matches(@"^\+?[1-9]\d{1,14}$");
         RuleFor(user => user.Status).NotEqual(UserStatus.Unknown);
@@ -39,5 +40,28 @@ public sealed class UserNameModelValidator : AbstractValidator<UserNameModel>
     {
         RuleFor(name => name.Firstname).NotEmpty().MaximumLength(100);
         RuleFor(name => name.Lastname).NotEmpty().MaximumLength(100);
+    }
+}
+
+public sealed class UserAddressModelValidator : AbstractValidator<UserAddressModel>
+{
+    public UserAddressModelValidator()
+    {
+        RuleFor(address => address.City).NotEmpty().MaximumLength(100);
+        RuleFor(address => address.Street).NotEmpty().MaximumLength(150);
+        RuleFor(address => address.Number).GreaterThan(0);
+        RuleFor(address => address.Zipcode).NotEmpty().MaximumLength(20);
+        RuleFor(address => address.Geolocation)
+            .NotNull()
+            .SetValidator(new UserGeolocationModelValidator());
+    }
+}
+
+public sealed class UserGeolocationModelValidator : AbstractValidator<UserGeolocationModel>
+{
+    public UserGeolocationModelValidator()
+    {
+        RuleFor(geolocation => geolocation.Lat).NotEmpty().MaximumLength(50);
+        RuleFor(geolocation => geolocation.Long).NotEmpty().MaximumLength(50);
     }
 }
