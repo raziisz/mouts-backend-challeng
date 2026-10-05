@@ -2,6 +2,35 @@
 
 ## General API Definitions
 
+### Health Checks
+
+Health check endpoints are anonymous and can be used by container orchestration
+or monitoring systems:
+
+- `GET /health`: Overall application health. Includes all registered checks.
+- `GET /health/live`: Liveness probe. Confirms that the application process is running.
+- `GET /health/ready`: Readiness probe. Confirms that the application is ready to receive traffic.
+
+Healthy and degraded checks return HTTP `200 OK`. An unhealthy check returns
+HTTP `503 Service Unavailable`.
+
+Response format:
+
+```json
+{
+  "status": "Healthy",
+  "healthChecks": [
+    {
+      "name": "Liveness",
+      "status": "Healthy",
+      "description": null,
+      "errorMessage": null,
+      "hostEnvironment": "development"
+    }
+  ]
+}
+```
+
 ### Pagination
 
 Pagination is supported for list endpoints using the following query parameters:
