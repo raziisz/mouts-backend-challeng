@@ -45,9 +45,9 @@ public class ProductsController(IMediator mediator) : ControllerBase
 
 public sealed class ProductRequest
 {
-    public string Title { get; set; } = string.Empty; public decimal Price { get; set; } public string Description { get; set; } = string.Empty; public string Category { get; set; } = string.Empty; public string Image { get; set; } = string.Empty; public ProductRatingRequest Rating { get; set; } = new();
-    public CreateProductCommand ToCommand() => new(Title, Price, Description, Category, Image, Rating.Rate, Rating.Count);
-    public UpdateProductCommand ToCommand(int id) => new(id, Title, Price, Description, Category, Image, Rating.Rate, Rating.Count);
+    public string Title { get; set; } = string.Empty; public decimal Price { get; set; } public string Description { get; set; } = string.Empty; public string Category { get; set; } = string.Empty; public string Image { get; set; } = string.Empty; public ProductRatingRequest? Rating { get; set; } = new();
+    public CreateProductCommand ToCommand() { var rating = Rating ?? new(); return new(Title, Price, Description, Category, Image, rating.Rate, rating.Count); }
+    public UpdateProductCommand ToCommand(int id) { var rating = Rating ?? new(); return new(id, Title, Price, Description, Category, Image, rating.Rate, rating.Count); }
 }
 public sealed class ProductRatingRequest { public decimal Rate { get; set; } public int Count { get; set; } }
 
@@ -97,8 +97,8 @@ public class CartsController(IMediator mediator) : ControllerBase
 }
 public sealed class CartRequest
 {
-    public int UserId { get; set; } public DateTime Date { get; set; } public List<CartItemResult> Products { get; set; } = [];
-    public CreateCartCommand ToCreate() => new(UserId, Date, Products); public UpdateCartCommand ToUpdate(int id) => new(id, UserId, Date, Products);
+    public int UserId { get; set; } public DateTime Date { get; set; } public List<CartItemResult>? Products { get; set; } = [];
+    public CreateCartCommand ToCreate() => new(UserId, Date, Products!); public UpdateCartCommand ToUpdate(int id) => new(id, UserId, Date, Products!);
 }
 
 [ApiController]
@@ -120,7 +120,7 @@ public class SalesController(IMediator mediator) : ControllerBase
 
     [HttpPost] public async Task<IActionResult> Create(SaleRequest request, CancellationToken cancellationToken)
     {
-        if (!User.IsPrivileged() && request.Customer.Id != User.GetRequiredUserId()) return Forbid();
+        if (!User.IsPrivileged() && request.Customer?.Id != User.GetRequiredUserId()) return Forbid();
         var result = await mediator.Send(request.ToCreate(), cancellationToken);
         return CreatedAtAction(nameof(Get), new { id = result.Id }, result);
     }
@@ -140,7 +140,7 @@ public class SalesController(IMediator mediator) : ControllerBase
 }
 public sealed class SaleRequest
 {
-    public string SaleNumber { get; set; } = string.Empty; public DateTime Date { get; set; } public ExternalIdentity Customer { get; set; } = new(); public ExternalIdentity Branch { get; set; } = new(); public List<SaleItemInputModel> Products { get; set; } = [];
-    public CreateSaleCommand ToCreate() => new(SaleNumber, Date, Customer.Id, Customer.Description, Branch.Id, Branch.Description, Products);
-    public UpdateSaleCommand ToUpdate(int id) => new(id, SaleNumber, Date, Customer.Id, Customer.Description, Branch.Id, Branch.Description, Products);
+    public string SaleNumber { get; set; } = string.Empty; public DateTime Date { get; set; } public ExternalIdentity? Customer { get; set; } = new(); public ExternalIdentity? Branch { get; set; } = new(); public List<SaleItemInputModel>? Products { get; set; } = [];
+    public CreateSaleCommand ToCreate() { var customer = Customer ?? new(); var branch = Branch ?? new(); return new(SaleNumber, Date, customer.Id, customer.Description, branch.Id, branch.Description, Products!); }
+    public UpdateSaleCommand ToUpdate(int id) { var customer = Customer ?? new(); var branch = Branch ?? new(); return new(id, SaleNumber, Date, customer.Id, customer.Description, branch.Id, branch.Description, Products!); }
 }
