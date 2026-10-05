@@ -31,7 +31,19 @@ also restricted to Admins and Managers.
         "branch": { "id": "integer", "description": "string" },
         "status": "string (enum: Active, Cancelled)",
         "totalAmount": "number",
-        "products": []
+        "products": [
+          {
+            "id": "integer",
+            "productId": "integer",
+            "productDescription": "string",
+            "quantity": "integer",
+            "unitPrice": "number",
+            "discountRate": "number",
+            "discountAmount": "number",
+            "totalAmount": "number",
+            "isCancelled": "boolean"
+          }
+        ]
       }
     ],
     "totalItems": "integer",
@@ -101,6 +113,18 @@ Sale quantities must be positive and cannot exceed 20 identical items. Invalid
 payloads return `400 ValidationError`; domain rule violations return
 `409 BusinessRuleViolation`. Other standard responses are described in the
 [General API documentation](./general-api.md).
+
+Each sale item contains the original unit price and the calculated discount.
+The `discountRate` is `0`, `0.10` or `0.20`, according to the quantity rules:
+
+- Fewer than 4 items: no discount.
+- From 4 to 9 items: 10% discount.
+- From 10 to 20 items: 20% discount.
+
+`discountAmount` is the discount applied to the item's gross amount, and
+`totalAmount` is the item's final amount after the discount. When an item is
+cancelled, `isCancelled` is `true` and it is excluded from the sale's
+`totalAmount`.
 
 <br>
 <div style="display: flex; justify-content: space-between;">
