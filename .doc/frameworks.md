@@ -12,8 +12,7 @@ Backend:
   - Git: https://github.com/jbogard/MediatR
 - **Automapper**: A convention-based object-object mapper that simplifies the process of mapping one object to another.
   - Git: https://github.com/AutoMapper/AutoMapper
-- **Rebus**: A lean service bus implementation for .NET, providing a simple and flexible way to do messaging and queueing in .NET applications.
-  - Git: https://github.com/rebus-org/Rebus
+- **MongoDB event publisher**: Sale domain events are published through the application event publisher and persisted to MongoDB. This project does not currently use Rebus or another external message bus.
 
 Testing:
 - **Faker**: A library for generating fake data for testing purposes, allowing for more realistic and diverse test scenarios.

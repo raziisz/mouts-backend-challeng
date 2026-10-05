@@ -2,12 +2,21 @@
 
 ### Products
 
+All product endpoints require authentication. Product reads are available to
+all authenticated users; product creation, update and deletion require the
+`Admin` role.
+
 #### GET /api/products
 - Description: Retrieve a list of all products
 - Query Parameters:
   - `_page` (optional): Page number for pagination (default: 1)
-  - `_size` (optional): Number of items per page (default: 10)
+  - `_size` (optional): Number of items per page (default: 10, maximum: 100)
   - `_order` (optional): Ordering of results (e.g., "price desc, title asc")
+  - `title` (optional): Filter by title; supports partial matching with `*`
+  - `category` (optional): Filter by category; supports partial matching with `*`
+  - `price` (optional): Filter by exact price
+  - `_minPrice` (optional): Minimum price
+  - `_maxPrice` (optional): Maximum price
 - Response: 
   ```json
   {
@@ -143,7 +152,7 @@
   - `category`: Category name
 - Query Parameters:
   - `_page` (optional): Page number for pagination (default: 1)
-  - `_size` (optional): Number of items per page (default: 10)
+  - `_size` (optional): Number of items per page (default: 10, maximum: 100)
   - `_order` (optional): Ordering of results (e.g., "price desc, title asc")
 - Response: 
   ```json

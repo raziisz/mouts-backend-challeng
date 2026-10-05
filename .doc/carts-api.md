@@ -2,12 +2,20 @@
 
 ### Carts
 
+All cart endpoints require authentication. Customers can only create, read,
+update and delete their own carts. Admins and Managers can access carts across
+users.
+
 #### GET /api/carts
 - Description: Retrieve a list of all carts
 - Query Parameters:
   - `_page` (optional): Page number for pagination (default: 1)
-  - `_size` (optional): Number of items per page (default: 10)
+  - `_size` (optional): Number of items per page (default: 10, maximum: 100)
   - `_order` (optional): Ordering of results (e.g., "id desc, userId asc")
+  - `userId` (optional): Filter by user ID; ignored for non-privileged users
+  - `date` (optional): Filter by exact date
+  - `_minDate` (optional): Minimum date
+  - `_maxDate` (optional): Maximum date
 - Response: 
   ```json
   {
@@ -126,5 +134,5 @@
 <br>
 <div style="display: flex; justify-content: space-between;">
   <a href="./products-api.md">Previous: Products API</a>
-  <a href="./users-api.md">Next: Users API</a>
+  <a href="./sales-api.md">Next: Sales API</a>
 </div>

@@ -7,7 +7,7 @@
 Pagination is supported for list endpoints using the following query parameters:
 
 - `_page`: Page number (default: 1)
-- `_size`: Number of items per page (default: 10)
+- `_size`: Number of items per page (default: 10, maximum: 100)
 
 Example:
 ```
@@ -127,8 +127,8 @@ Example error responses:
 ```json
 {
   "type": "ResourceNotFound",
-  "error": "Product not found",
-  "detail": "The product with ID 12345 does not exist in our database"
+  "error": "Resource not found",
+  "detail": "Product 12345 was not found."
 }
 ```
 
@@ -169,6 +169,19 @@ Example error responses:
 ```
 
 For detailed error information, refer to the specific endpoint documentation.
+
+### Authorization
+
+All endpoints except `POST /api/auth/login` require a valid JWT bearer token.
+
+| Role | Permissions |
+|---|---|
+| Customer | Read products; create and manage own carts; create sales and read own sales |
+| Manager | Customer permissions plus update and cancel sales, including sale items |
+| Admin | User CRUD, product CRUD, full catalog access and sale management |
+
+Requests without a valid token return `401 AuthenticationError`. Authenticated
+users without the required role or ownership return `403 AuthorizationError`.
 
 <br>
 <div style="display: flex; justify-content: space-between;">

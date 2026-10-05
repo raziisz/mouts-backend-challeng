@@ -3,6 +3,9 @@
 
 ### Authentication
 
+Login is the only anonymous endpoint. All other API endpoints require the JWT
+returned by this request in the `Authorization: Bearer {token}` header.
+
 #### POST /api/auth/login
 - Description: Authenticate a user
 - The email is the canonical authentication identifier and is required for login. The `username` field remains part of the user profile and is not accepted as a login identifier.
