@@ -5,10 +5,11 @@
 
 #### POST /api/auth/login
 - Description: Authenticate a user
+- The email is the canonical authentication identifier and is required for login. The `username` field remains part of the user profile and is not accepted as a login identifier.
 - Request Body:
   ```json
   {
-    "username": "string",
+    "email": "string",
     "password": "string"
   }
   ```

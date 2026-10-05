@@ -3,6 +3,8 @@ using System.Threading.Tasks;
 using Ambev.DeveloperEvaluation.Common.Security;
 using Ambev.DeveloperEvaluation.Domain.Repositories;
 using Ambev.DeveloperEvaluation.Domain.Specifications;
+using Ambev.DeveloperEvaluation.Domain.Validation;
+using FluentValidation;
 using MediatR;
 
 namespace Ambev.DeveloperEvaluation.Application.Auth.AuthenticateUser
@@ -25,9 +27,11 @@ namespace Ambev.DeveloperEvaluation.Application.Auth.AuthenticateUser
 
         public async Task<AuthenticateUserResult> Handle(AuthenticateUserCommand request, CancellationToken cancellationToken)
         {
-            var user = !string.IsNullOrWhiteSpace(request.Username)
-                ? await _userRepository.GetByUsernameAsync(request.Username, cancellationToken)
-                : await _userRepository.GetByEmailAsync(request.Email, cancellationToken);
+            var validationResult = await new AuthenticateUserValidator().ValidateAsync(request, cancellationToken);
+            if (!validationResult.IsValid)
+                throw new ValidationException(validationResult.Errors);
+
+            var user = await _userRepository.GetByEmailAsync(request.Email, cancellationToken);
             
             if (user == null || !_passwordHasher.VerifyPassword(request.Password, user.Password))
             {

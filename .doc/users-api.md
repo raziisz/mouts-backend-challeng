@@ -2,6 +2,8 @@
 
 ### Users
 
+`email` is the canonical authentication identifier and must be unique. `username` remains a required profile field and must also be unique. User updates validate all profile, contact, address, geolocation, status and role fields before persisting changes.
+
 #### GET /api/users
 - Description: Retrieve a list of all users
 - Query Parameters:

@@ -39,7 +39,32 @@ public class DocumentedUsersController(IMediator mediator) : ControllerBase
     public async Task<IActionResult> Get(int id, CancellationToken cancellationToken) => Ok(await mediator.Send(new Ambev.DeveloperEvaluation.Application.Users.GetUser.GetUserCommand(id), cancellationToken));
 
     [HttpPut("{id:int}")]
-    public async Task<IActionResult> Update(int id, UpdateUserRequest request, CancellationToken cancellationToken) => Ok(await mediator.Send(new UpdateUserCommand(id, request.Username, request.Email, new UserNameModel { Firstname = request.Name.Firstname, Lastname = request.Name.Lastname }, request.Phone, new UserAddressModel { City = request.Address.City, Street = request.Address.Street, Number = request.Address.Number, Zipcode = request.Address.Zipcode, Geolocation = new UserGeolocationModel { Lat = request.Address.Geolocation.Lat, Long = request.Address.Geolocation.Long } }, request.Status, request.Role), cancellationToken));
+    public async Task<IActionResult> Update(int id, UpdateUserRequest request, CancellationToken cancellationToken)
+    {
+        request ??= new UpdateUserRequest();
+        var name = request.Name ?? new UserNameRequest();
+        var address = request.Address ?? new UserAddressRequest();
+        var geolocation = address.Geolocation ?? new UserGeolocationRequest();
+
+        var command = new UpdateUserCommand(
+            id,
+            request.Username,
+            request.Email,
+            new UserNameModel { Firstname = name.Firstname, Lastname = name.Lastname },
+            request.Phone,
+            new UserAddressModel
+            {
+                City = address.City,
+                Street = address.Street,
+                Number = address.Number,
+                Zipcode = address.Zipcode,
+                Geolocation = new UserGeolocationModel { Lat = geolocation.Lat, Long = geolocation.Long }
+            },
+            request.Status,
+            request.Role);
+
+        return Ok(await mediator.Send(command, cancellationToken));
+    }
 
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken) => Ok(await mediator.Send(new Ambev.DeveloperEvaluation.Application.Users.DeleteUser.DeleteUserCommand(id), cancellationToken));
@@ -49,9 +74,9 @@ public sealed class UpdateUserRequest
 {
     public string Username { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
-    public UserNameRequest Name { get; set; } = new();
+    public UserNameRequest? Name { get; set; } = new();
     public string Phone { get; set; } = string.Empty;
-    public UserAddressRequest Address { get; set; } = new();
+    public UserAddressRequest? Address { get; set; } = new();
     public UserStatus Status { get; set; }
     public UserRole Role { get; set; }
 }

@@ -6,8 +6,8 @@ namespace Ambev.DeveloperEvaluation.Functional;
 [Collection("Functional API")]
 public sealed class CrudFunctionalTests(FunctionalApiFixture fixture)
 {
-    private static string AdminUsername =>
-        Environment.GetEnvironmentVariable("FUNCTIONAL_ADMIN_USERNAME") ?? "admin";
+    private static string AdminEmail =>
+        Environment.GetEnvironmentVariable("FUNCTIONAL_ADMIN_EMAIL") ?? "admin@localhost";
 
     private static string AdminPassword =>
         Environment.GetEnvironmentVariable("FUNCTIONAL_ADMIN_PASSWORD") ?? "Admin@123";
@@ -15,7 +15,7 @@ public sealed class CrudFunctionalTests(FunctionalApiFixture fixture)
     [Fact(DisplayName = "Documented user, product and cart CRUD endpoints should be functional")]
     public async Task Should_execute_documented_crud_operations()
     {
-        var adminToken = await fixture.LoginAsync(AdminUsername, AdminPassword);
+        var adminToken = await fixture.LoginAsync(AdminEmail, AdminPassword);
         var suffix = Guid.NewGuid().ToString("N")[..12];
         var username = $"functional-crud-{suffix}";
         var userId = await fixture.CreateUserAsync(adminToken, username, "Customer");
@@ -24,10 +24,59 @@ public sealed class CrudFunctionalTests(FunctionalApiFixture fixture)
 
         try
         {
-            var customerToken = await fixture.LoginAsync(username, "User@123");
+            var customerToken = await fixture.LoginAsync($"{username}@localhost.com", "User@123");
 
             using var getUserResponse = await fixture.SendAsync(HttpMethod.Get, $"/api/users/{userId}", adminToken);
             Assert.Equal(HttpStatusCode.OK, getUserResponse.StatusCode);
+
+            using var nullNestedUpdateResponse = await fixture.SendAsync(
+                HttpMethod.Put,
+                $"/api/users/{userId}",
+                adminToken,
+                new
+                {
+                    username,
+                    email = $"{username}@localhost.com",
+                    name = (object?)null,
+                    address = (object?)null,
+                    phone = "+5592988888888",
+                    status = "Active",
+                    role = "Customer"
+                });
+            await FunctionalApiFixture.AssertErrorResponseAsync(
+                nullNestedUpdateResponse,
+                HttpStatusCode.BadRequest,
+                "ValidationError",
+                "Invalid input data");
+
+            using var invalidUpdateUserResponse = await fixture.SendAsync(
+                HttpMethod.Put,
+                $"/api/users/{userId}",
+                adminToken,
+                new
+                {
+                    username = "x",
+                    email = "invalid-email",
+                    name = new { firstname = "", lastname = "" },
+                    address = new
+                    {
+                        city = "",
+                        street = "",
+                        number = 0,
+                        zipcode = "",
+                        geolocation = new { lat = "", @long = "" }
+                    },
+                    phone = "invalid-phone",
+                    status = "Unknown",
+                    role = "None"
+                });
+            await FunctionalApiFixture.AssertErrorResponseAsync(
+                invalidUpdateUserResponse,
+                HttpStatusCode.BadRequest,
+                "ValidationError",
+                "Invalid input data");
+
+            var updatedEmail = $"{username}-updated@localhost.com";
 
             using var updateUserResponse = await fixture.SendAsync(
                 HttpMethod.Put,
@@ -36,7 +85,7 @@ public sealed class CrudFunctionalTests(FunctionalApiFixture fixture)
                 new
                 {
                     username = $"{username}-updated",
-                    email = $"{username}-updated@localhost.com",
+                    email = updatedEmail,
                     name = new { firstname = "Updated", lastname = "Customer" },
                     address = new
                     {
@@ -51,6 +100,7 @@ public sealed class CrudFunctionalTests(FunctionalApiFixture fixture)
                     role = "Customer"
                 });
             Assert.Equal(HttpStatusCode.OK, updateUserResponse.StatusCode);
+            customerToken = await fixture.LoginAsync(updatedEmail, "User@123");
 
             using var categoriesResponse = await fixture.SendAsync(HttpMethod.Get, "/api/products/categories", adminToken);
             Assert.Equal(HttpStatusCode.OK, categoriesResponse.StatusCode);

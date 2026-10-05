@@ -21,8 +21,8 @@ public class EmailValidator : AbstractValidator<string>
         if (string.IsNullOrWhiteSpace(email))
             return false;
 
-        // More strict email validation
-        var regex = new Regex(@"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$");
+        // Accepts regular domains and local development hosts such as admin@localhost.
+        var regex = new Regex(@"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$");
         return regex.IsMatch(email);
     }
 }

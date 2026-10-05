@@ -47,6 +47,10 @@ public class CreateUserHandler : IRequestHandler<CreateUserCommand, CreateUserRe
         if (existingUser != null)
             throw new InvalidOperationException($"User with email {command.Email} already exists");
 
+        var existingUsername = await _userRepository.GetByUsernameAsync(command.Username, cancellationToken);
+        if (existingUsername != null)
+            throw new InvalidOperationException($"User with username {command.Username} already exists");
+
         var user = _mapper.Map<User>(command);
         user.Password = _passwordHasher.HashPassword(command.Password);
 

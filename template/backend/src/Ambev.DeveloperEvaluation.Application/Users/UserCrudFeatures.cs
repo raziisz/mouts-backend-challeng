@@ -2,6 +2,8 @@ using Ambev.DeveloperEvaluation.Common.Persistence;
 using Ambev.DeveloperEvaluation.Domain.Entities;
 using Ambev.DeveloperEvaluation.Domain.Enums;
 using Ambev.DeveloperEvaluation.Domain.Repositories;
+using Ambev.DeveloperEvaluation.Domain.Validation;
+using FluentValidation;
 using MediatR;
 
 namespace Ambev.DeveloperEvaluation.Application.Users
@@ -9,6 +11,41 @@ namespace Ambev.DeveloperEvaluation.Application.Users
     public record ListUsersQuery(int Page = 1, int Size = 10, string? Order = null, string? Username = null, string? Email = null, string? Phone = null, UserStatus? Status = null, UserRole? Role = null) : IRequest<PagedResult<UserListResult>>;
     public record UpdateUserCommand(int Id, string Username, string Email, UserNameModel Name, string Phone, UserAddressModel Address, UserStatus Status, UserRole Role) : IRequest<UserListResult>;
     public class UserListResult { public int Id { get; set; } public string Username { get; set; } = string.Empty; public string Email { get; set; } = string.Empty; public UserNameModel Name { get; set; } = new(); public string Phone { get; set; } = string.Empty; public UserAddressModel Address { get; set; } = new(); public UserStatus Status { get; set; } public UserRole Role { get; set; } }
+
+    public sealed class UpdateUserCommandValidator : AbstractValidator<UpdateUserCommand>
+    {
+        public UpdateUserCommandValidator()
+        {
+            RuleFor(user => user.Username).NotEmpty().Length(3, 50);
+            RuleFor(user => user.Email).SetValidator(new EmailValidator());
+            RuleFor(user => user.Name)
+                .NotNull()
+                .ChildRules(name =>
+                {
+                    name.RuleFor(value => value.Firstname).NotEmpty().MaximumLength(100);
+                    name.RuleFor(value => value.Lastname).NotEmpty().MaximumLength(100);
+                });
+            RuleFor(user => user.Phone).SetValidator(new PhoneValidator());
+            RuleFor(user => user.Status).NotEqual(UserStatus.Unknown);
+            RuleFor(user => user.Role).NotEqual(UserRole.None);
+            RuleFor(user => user.Address)
+                .NotNull()
+                .ChildRules(address =>
+                {
+                    address.RuleFor(value => value.City).NotEmpty().MaximumLength(100);
+                    address.RuleFor(value => value.Street).NotEmpty().MaximumLength(150);
+                    address.RuleFor(value => value.Number).GreaterThan(0);
+                    address.RuleFor(value => value.Zipcode).NotEmpty().MaximumLength(20);
+                    address.RuleFor(value => value.Geolocation)
+                        .NotNull()
+                        .ChildRules(geolocation =>
+                        {
+                            geolocation.RuleFor(value => value.Lat).NotEmpty().MaximumLength(50);
+                            geolocation.RuleFor(value => value.Long).NotEmpty().MaximumLength(50);
+                        });
+                });
+        }
+    }
 
     public static class UserMappings
     {
@@ -25,7 +62,20 @@ namespace Ambev.DeveloperEvaluation.Application.Users
     {
         public async Task<UserListResult> Handle(UpdateUserCommand request, CancellationToken cancellationToken)
         {
+            var validationResult = await new UpdateUserCommandValidator().ValidateAsync(request, cancellationToken);
+            if (!validationResult.IsValid)
+                throw new ValidationException(validationResult.Errors);
+
             var user = await repository.GetByIdAsync(request.Id, cancellationToken) ?? throw new KeyNotFoundException($"User with ID {request.Id} not found");
+
+            var existingEmail = await repository.GetByEmailAsync(request.Email, cancellationToken);
+            if (existingEmail is not null && existingEmail.Id != request.Id)
+                throw new InvalidOperationException($"User with email {request.Email} already exists");
+
+            var existingUsername = await repository.GetByUsernameAsync(request.Username, cancellationToken);
+            if (existingUsername is not null && existingUsername.Id != request.Id)
+                throw new InvalidOperationException($"User with username {request.Username} already exists");
+
             user.Username = request.Username; user.Email = request.Email; user.Name = new Domain.Entities.Name { Firstname = request.Name.Firstname, Lastname = request.Name.Lastname }; user.Phone = request.Phone; user.Status = request.Status; user.Role = request.Role;
             user.Address = new Domain.Entities.Address { City = request.Address.City, Street = request.Address.Street, Number = request.Address.Number, Zipcode = request.Address.Zipcode, Geolocation = new Domain.Entities.Geolocation { Lat = request.Address.Geolocation.Lat, Long = request.Address.Geolocation.Long } };
             user.UpdatedAt = DateTime.UtcNow;

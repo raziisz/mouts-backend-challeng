@@ -43,11 +43,11 @@ public sealed class FunctionalApiFixture : IAsyncLifetime
         return await Client.SendAsync(request);
     }
 
-    public async Task<string> LoginAsync(string username, string password)
+    public async Task<string> LoginAsync(string email, string password)
     {
         using var response = await SendAsync(HttpMethod.Post, "/api/auth/login", body: new
         {
-            username,
+            email,
             password
         });
 

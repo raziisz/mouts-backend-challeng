@@ -6,8 +6,8 @@ namespace Ambev.DeveloperEvaluation.Functional;
 [Collection("Functional API")]
 public sealed class SalesFunctionalTests(FunctionalApiFixture fixture)
 {
-    private static string AdminUsername =>
-        Environment.GetEnvironmentVariable("FUNCTIONAL_ADMIN_USERNAME") ?? "admin";
+    private static string AdminEmail =>
+        Environment.GetEnvironmentVariable("FUNCTIONAL_ADMIN_EMAIL") ?? "admin@localhost";
 
     private static string AdminPassword =>
         Environment.GetEnvironmentVariable("FUNCTIONAL_ADMIN_PASSWORD") ?? "Admin@123";
@@ -15,7 +15,7 @@ public sealed class SalesFunctionalTests(FunctionalApiFixture fixture)
     [Fact(DisplayName = "Sales apply discounts and support manager cancellation workflow")]
     public async Task Should_execute_sale_lifecycle()
     {
-        var adminToken = await fixture.LoginAsync(AdminUsername, AdminPassword);
+        var adminToken = await fixture.LoginAsync(AdminEmail, AdminPassword);
         var suffix = Guid.NewGuid().ToString("N")[..12];
         var customerUsername = $"functional-sale-customer-{suffix}";
         var managerUsername = $"functional-sale-manager-{suffix}";
@@ -26,8 +26,8 @@ public sealed class SalesFunctionalTests(FunctionalApiFixture fixture)
 
         try
         {
-            var customerToken = await fixture.LoginAsync(customerUsername, "User@123");
-            var managerToken = await fixture.LoginAsync(managerUsername, "User@123");
+            var customerToken = await fixture.LoginAsync($"{customerUsername}@localhost.com", "User@123");
+            var managerToken = await fixture.LoginAsync($"{managerUsername}@localhost.com", "User@123");
 
             using var createResponse = await fixture.SendAsync(
                 HttpMethod.Post,

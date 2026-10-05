@@ -13,7 +13,6 @@ public class AuthenticateUserCommand : IRequest<AuthenticateUserResult>
     /// Used as the primary identifier for the user.
     /// </summary>
     public string Email { get; set; } = string.Empty;
-    public string Username { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the password for authentication.
