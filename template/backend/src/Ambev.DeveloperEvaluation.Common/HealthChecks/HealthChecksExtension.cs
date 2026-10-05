@@ -103,7 +103,7 @@ public static class HealthChecksExtension
     {
         var options = new HealthCheckOptions
         {
-            Predicate = (check) => check.Tags.Contains(tag),
+            Predicate = (check) => string.IsNullOrWhiteSpace(tag) || check.Tags.Contains(tag),
             ResultStatusCodes =
             {
                 [HealthStatus.Healthy] = StatusCodes.Status200OK,
