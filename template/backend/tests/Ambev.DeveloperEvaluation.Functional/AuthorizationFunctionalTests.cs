@@ -18,7 +18,11 @@ public sealed class AuthorizationFunctionalTests(FunctionalApiFixture fixture)
     public async Task Should_enforce_role_permissions()
     {
         var anonymousResponse = await fixture.SendAsync(HttpMethod.Get, "/api/products");
-        Assert.Equal(HttpStatusCode.Unauthorized, anonymousResponse.StatusCode);
+        await FunctionalApiFixture.AssertErrorResponseAsync(
+            anonymousResponse,
+            HttpStatusCode.Unauthorized,
+            "AuthenticationError",
+            "Authentication failed");
 
         var adminToken = await fixture.LoginAsync(AdminUsername, AdminPassword);
         var suffix = Guid.NewGuid().ToString("N")[..12];
@@ -37,7 +41,11 @@ public sealed class AuthorizationFunctionalTests(FunctionalApiFixture fixture)
             Assert.Equal(HttpStatusCode.OK, customerProducts.StatusCode);
 
             using var customerUsers = await fixture.SendAsync(HttpMethod.Get, "/api/users", customerToken);
-            Assert.Equal(HttpStatusCode.Forbidden, customerUsers.StatusCode);
+            await FunctionalApiFixture.AssertErrorResponseAsync(
+                customerUsers,
+                HttpStatusCode.Forbidden,
+                "AuthorizationError",
+                "Access denied");
 
             using var customerProductCreate = await fixture.SendAsync(
                 HttpMethod.Post,
@@ -52,10 +60,18 @@ public sealed class AuthorizationFunctionalTests(FunctionalApiFixture fixture)
                     image = "http://localhost/forbidden.png",
                     rating = new { rate = 1, count = 0 }
                 });
-            Assert.Equal(HttpStatusCode.Forbidden, customerProductCreate.StatusCode);
+            await FunctionalApiFixture.AssertErrorResponseAsync(
+                customerProductCreate,
+                HttpStatusCode.Forbidden,
+                "AuthorizationError",
+                "Access denied");
 
             using var managerUsers = await fixture.SendAsync(HttpMethod.Get, "/api/users", managerToken);
-            Assert.Equal(HttpStatusCode.Forbidden, managerUsers.StatusCode);
+            await FunctionalApiFixture.AssertErrorResponseAsync(
+                managerUsers,
+                HttpStatusCode.Forbidden,
+                "AuthorizationError",
+                "Access denied");
 
             using var managerProductCreate = await fixture.SendAsync(
                 HttpMethod.Post,
@@ -70,7 +86,11 @@ public sealed class AuthorizationFunctionalTests(FunctionalApiFixture fixture)
                     image = "http://localhost/forbidden-manager.png",
                     rating = new { rate = 1, count = 0 }
                 });
-            Assert.Equal(HttpStatusCode.Forbidden, managerProductCreate.StatusCode);
+            await FunctionalApiFixture.AssertErrorResponseAsync(
+                managerProductCreate,
+                HttpStatusCode.Forbidden,
+                "AuthorizationError",
+                "Access denied");
 
             using var managerSales = await fixture.SendAsync(HttpMethod.Get, "/api/sales", managerToken);
             Assert.Equal(HttpStatusCode.OK, managerSales.StatusCode);
@@ -139,17 +159,29 @@ public sealed class AuthorizationFunctionalTests(FunctionalApiFixture fixture)
             }
 
             using var otherCart = await fixture.SendAsync(HttpMethod.Get, $"/api/carts/{cartBId}", customerAToken);
-            Assert.Equal(HttpStatusCode.Forbidden, otherCart.StatusCode);
+            await FunctionalApiFixture.AssertErrorResponseAsync(
+                otherCart,
+                HttpStatusCode.Forbidden,
+                "AuthorizationError",
+                "Access denied");
 
             using var otherSale = await fixture.SendAsync(HttpMethod.Get, $"/api/sales/{saleBId}", customerAToken);
-            Assert.Equal(HttpStatusCode.Forbidden, otherSale.StatusCode);
+            await FunctionalApiFixture.AssertErrorResponseAsync(
+                otherSale,
+                HttpStatusCode.Forbidden,
+                "AuthorizationError",
+                "Access denied");
 
             using var foreignCartCreation = await fixture.SendAsync(
                 HttpMethod.Post,
                 "/api/carts",
                 customerAToken,
                 new { userId = customerBId, date = DateTime.UtcNow, products = Array.Empty<object>() });
-            Assert.Equal(HttpStatusCode.Forbidden, foreignCartCreation.StatusCode);
+            await FunctionalApiFixture.AssertErrorResponseAsync(
+                foreignCartCreation,
+                HttpStatusCode.Forbidden,
+                "AuthorizationError",
+                "Access denied");
 
             using var foreignSaleCreation = await fixture.SendAsync(
                 HttpMethod.Post,
@@ -166,7 +198,11 @@ public sealed class AuthorizationFunctionalTests(FunctionalApiFixture fixture)
                         new { productId, productDescription = "Functional product", unitPrice = 10, quantity = 1 }
                     }
                 });
-            Assert.Equal(HttpStatusCode.Forbidden, foreignSaleCreation.StatusCode);
+            await FunctionalApiFixture.AssertErrorResponseAsync(
+                foreignSaleCreation,
+                HttpStatusCode.Forbidden,
+                "AuthorizationError",
+                "Access denied");
         }
         finally
         {

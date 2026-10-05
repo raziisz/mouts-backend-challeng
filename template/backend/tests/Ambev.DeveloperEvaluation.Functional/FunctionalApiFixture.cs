@@ -143,6 +143,22 @@ public sealed class FunctionalApiFixture : IAsyncLifetime
     {
         return await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
     }
+
+    public static async Task AssertErrorResponseAsync(
+        HttpResponseMessage response,
+        HttpStatusCode expectedStatus,
+        string expectedType,
+        string expectedError)
+    {
+        Assert.Equal(expectedStatus, response.StatusCode);
+
+        using var document = await ReadDocumentAsync(response);
+        var root = document.RootElement;
+
+        Assert.Equal(expectedType, root.GetProperty("type").GetString());
+        Assert.Equal(expectedError, root.GetProperty("error").GetString());
+        Assert.False(string.IsNullOrWhiteSpace(root.GetProperty("detail").GetString()));
+    }
 }
 
 [CollectionDefinition("Functional API", DisableParallelization = true)]

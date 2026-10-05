@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
@@ -35,11 +36,57 @@ namespace Ambev.DeveloperEvaluation.Common.Security
                     ValidateAudience = false,
                     ClockSkew = TimeSpan.Zero
                 };
+
+                x.Events = new JwtBearerEvents
+                {
+                    OnChallenge = async context =>
+                    {
+                        context.HandleResponse();
+                        await WriteErrorResponseAsync(
+                            context.HttpContext,
+                            StatusCodes.Status401Unauthorized,
+                            "AuthenticationError",
+                            "Authentication failed",
+                            "A valid authentication token is required.");
+                    },
+                    OnForbidden = async context =>
+                    {
+                        await WriteErrorResponseAsync(
+                            context.HttpContext,
+                            StatusCodes.Status403Forbidden,
+                            "AuthorizationError",
+                            "Access denied",
+                            "You do not have permission to access this resource.");
+                    }
+                };
             });
 
             services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 
             return services;
+        }
+
+        private static async Task WriteErrorResponseAsync(
+            HttpContext context,
+            int statusCode,
+            string type,
+            string error,
+            string detail)
+        {
+            if (context.Response.HasStarted)
+            {
+                return;
+            }
+
+            context.Response.Clear();
+            context.Response.StatusCode = statusCode;
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsJsonAsync(new
+            {
+                type,
+                error,
+                detail
+            });
         }
     }
 }

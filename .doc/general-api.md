@@ -136,17 +136,35 @@ Example error responses:
 ```json
 {
   "type": "AuthenticationError",
-  "error": "Invalid authentication token",
-  "detail": "The provided authentication token has expired or is invalid"
+  "error": "Authentication failed",
+  "detail": "A valid authentication token is required."
 }
 ```
 
-3. Validation Error
+3. Authorization Error
+```json
+{
+  "type": "AuthorizationError",
+  "error": "Access denied",
+  "detail": "You do not have permission to access this resource."
+}
+```
+
+4. Validation Error
 ```json
 {
   "type": "ValidationError",
   "error": "Invalid input data",
   "detail": "The 'price' field must be a positive number"
+}
+```
+
+5. Internal Server Error
+```json
+{
+  "type": "InternalServerError",
+  "error": "Internal server error",
+  "detail": "An unexpected error occurred while processing the request."
 }
 ```
 
