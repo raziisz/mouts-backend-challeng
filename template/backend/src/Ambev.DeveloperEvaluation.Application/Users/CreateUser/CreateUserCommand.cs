@@ -41,6 +41,8 @@ public class CreateUserCommand : IRequest<CreateUserResult>
     /// </summary>
     public string Email { get; set; } = string.Empty;
 
+    public UserNameModel Name { get; set; } = new();
+
     public UserAddressModel Address { get; set; } = new();
 
     /// <summary>

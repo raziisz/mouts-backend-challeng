@@ -29,6 +29,8 @@ public class CreateUserRequest
     /// </summary>
     public string Email { get; set; } = string.Empty;
 
+    public UserNameRequest Name { get; set; } = new();
+
     public UserAddressRequest Address { get; set; } = new();
 
     /// <summary>

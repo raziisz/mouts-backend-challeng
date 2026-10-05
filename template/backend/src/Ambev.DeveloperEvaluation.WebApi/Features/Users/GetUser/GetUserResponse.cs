@@ -16,7 +16,7 @@ public class GetUserResponse
     /// <summary>
     /// The user's full name
     /// </summary>
-    public string Name { get; set; } = string.Empty;
+    public UserNameResponse Name { get; set; } = new();
 
     public string Username { get; set; } = string.Empty;
 

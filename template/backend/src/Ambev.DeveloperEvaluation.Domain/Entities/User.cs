@@ -25,6 +25,8 @@ public class User : BaseEntity, IUser
     /// </summary>
     public string Email { get; set; } = string.Empty;
 
+    public Name Name { get; set; } = new();
+
     /// <summary>
     /// Gets the user's phone number.
     /// Must be a valid phone number format following the pattern (XX) XXXXX-XXXX.

@@ -1,5 +1,17 @@
 namespace Ambev.DeveloperEvaluation.WebApi.Features.Users;
 
+public sealed class UserNameRequest
+{
+    public string Firstname { get; set; } = string.Empty;
+    public string Lastname { get; set; } = string.Empty;
+}
+
+public sealed class UserNameResponse
+{
+    public string Firstname { get; init; } = string.Empty;
+    public string Lastname { get; init; } = string.Empty;
+}
+
 public sealed class UserGeolocationRequest
 {
     public string Lat { get; set; } = string.Empty;

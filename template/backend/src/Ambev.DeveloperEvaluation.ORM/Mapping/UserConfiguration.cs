@@ -1,7 +1,6 @@
 ﻿using Ambev.DeveloperEvaluation.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using System.Text.RegularExpressions;
 
 namespace Ambev.DeveloperEvaluation.ORM.Mapping;
 
@@ -18,6 +17,12 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.Password).IsRequired().HasMaxLength(100);
         builder.Property(u => u.Email).IsRequired().HasMaxLength(100);
         builder.Property(u => u.Phone).HasMaxLength(20);
+
+        builder.OwnsOne(u => u.Name, name =>
+        {
+            name.Property(x => x.Firstname).HasColumnName("Name_Firstname").HasMaxLength(100).IsRequired();
+            name.Property(x => x.Lastname).HasColumnName("Name_Lastname").HasMaxLength(100).IsRequired();
+        });
 
         builder.OwnsOne(u => u.Address, address =>
         {

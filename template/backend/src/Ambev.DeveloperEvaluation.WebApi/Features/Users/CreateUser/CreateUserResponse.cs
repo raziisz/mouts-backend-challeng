@@ -16,9 +16,9 @@ public class CreateUserResponse
     public string Username { get; set; } = string.Empty;
 
     /// <summary>
-    /// The user's full name
+    /// The user's first and last name
     /// </summary>
-    public string Name { get; set; } = string.Empty;
+    public UserNameResponse Name { get; set; } = new();
 
     /// <summary>
     /// The user's email address

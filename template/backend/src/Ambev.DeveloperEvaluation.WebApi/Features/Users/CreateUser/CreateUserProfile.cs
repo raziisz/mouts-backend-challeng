@@ -18,8 +18,10 @@ public class CreateUserProfile : Profile
         CreateMap<CreateUserRequest, CreateUserCommand>();
         CreateMap<UserGeolocationRequest, UserGeolocationModel>();
         CreateMap<UserAddressRequest, UserAddressModel>();
+        CreateMap<UserNameRequest, UserNameModel>();
         CreateMap<UserGeolocationModel, UserGeolocationResponse>();
         CreateMap<UserAddressModel, UserAddressResponse>();
+        CreateMap<UserNameModel, UserNameResponse>();
         CreateMap<CreateUserResult, CreateUserResponse>();
     }
 }

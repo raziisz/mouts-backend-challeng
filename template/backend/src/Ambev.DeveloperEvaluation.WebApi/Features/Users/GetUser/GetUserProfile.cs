@@ -14,6 +14,7 @@ public class GetUserProfile : Profile
     /// </summary>
     public GetUserProfile()
     {
+        CreateMap<UserNameModel, UserNameResponse>();
         CreateMap<UserGeolocationModel, UserGeolocationResponse>();
         CreateMap<UserAddressModel, UserAddressResponse>();
         CreateMap<int, Application.Users.GetUser.GetUserCommand>()

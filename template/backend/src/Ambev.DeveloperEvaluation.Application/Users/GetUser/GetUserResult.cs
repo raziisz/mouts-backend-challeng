@@ -16,7 +16,7 @@ public class GetUserResult
     /// <summary>
     /// The user's full name
     /// </summary>
-    public string Name { get; set; } = string.Empty;
+    public UserNameModel Name { get; set; } = new();
 
     public string Username { get; set; } = string.Empty;
 

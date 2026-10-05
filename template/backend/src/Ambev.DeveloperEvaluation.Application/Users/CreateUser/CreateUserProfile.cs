@@ -16,6 +16,8 @@ public class CreateUserProfile : Profile
     {
         CreateMap<UserGeolocationModel, Geolocation>();
         CreateMap<UserAddressModel, Address>();
+        CreateMap<UserNameModel, Name>();
+        CreateMap<Name, UserNameModel>();
         CreateMap<CreateUserCommand, User>();
         CreateMap<User, CreateUserResult>();
     }

@@ -113,12 +113,13 @@ public class UsersController : BaseController
             throw new ValidationException(validationResult.Errors);
 
         var command = _mapper.Map<DeleteUserCommand>(request.Id);
-        await _mediator.Send(command, cancellationToken);
+        var response = await _mediator.Send(command, cancellationToken);
 
-        return Ok(new ApiResponse
+        return Ok(new ApiResponseWithData<DeleteUserResponse>
         {
             Success = true,
-            Message = "User deleted successfully"
+            Message = "User deleted successfully",
+            Data = response
         });
     }
 
@@ -131,7 +132,7 @@ public class UsersController : BaseController
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateUser([FromRoute] int id, [FromBody] UpdateUserRequest request, CancellationToken cancellationToken)
     {
-        return Ok(await _mediator.Send(new UpdateUserCommand(id, request.Username, request.Email, request.Phone, new Application.Users.UserAddressModel { City = request.Address.City, Street = request.Address.Street, Number = request.Address.Number, Zipcode = request.Address.Zipcode, Geolocation = new Application.Users.UserGeolocationModel { Lat = request.Address.Geolocation.Lat, Long = request.Address.Geolocation.Long } }, request.Status, request.Role), cancellationToken));
+        return Ok(await _mediator.Send(new UpdateUserCommand(id, request.Username, request.Email, new Application.Users.UserNameModel { Firstname = request.Name.Firstname, Lastname = request.Name.Lastname }, request.Phone, new Application.Users.UserAddressModel { City = request.Address.City, Street = request.Address.Street, Number = request.Address.Number, Zipcode = request.Address.Zipcode, Geolocation = new Application.Users.UserGeolocationModel { Lat = request.Address.Geolocation.Lat, Long = request.Address.Geolocation.Long } }, request.Status, request.Role), cancellationToken));
     }
 }
 
@@ -139,6 +140,7 @@ public sealed class UpdateUserRequest
 {
     public string Username { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
+    public UserNameRequest Name { get; set; } = new();
     public string Phone { get; set; } = string.Empty;
     public UserAddressRequest Address { get; set; } = new();
     public UserStatus Status { get; set; }
