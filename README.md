@@ -70,6 +70,8 @@ This section includes links to the detailed documentation for the different API 
 - [Users API](./.doc/users-api.md)
 - [Auth API](./.doc/auth-api.md)
 
+Swagger UI (Development): [http://localhost:8080/swagger](http://localhost:8080/swagger)
+
 ## Project Structure
 This section describes the overall structure and organization of the project files and directories. 
 

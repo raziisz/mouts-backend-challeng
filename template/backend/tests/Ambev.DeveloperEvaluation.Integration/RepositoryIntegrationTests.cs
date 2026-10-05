@@ -3,6 +3,7 @@ using Ambev.DeveloperEvaluation.Domain.Enums;
 using Ambev.DeveloperEvaluation.Domain.Repositories;
 using Ambev.DeveloperEvaluation.Common.Persistence;
 using Ambev.DeveloperEvaluation.ORM.Repositories;
+using Microsoft.EntityFrameworkCore;
 using Xunit;
 
 namespace Ambev.DeveloperEvaluation.Integration;
@@ -49,6 +50,14 @@ public sealed class RepositoryIntegrationTests(IntegrationTestDatabase database)
             var page = await repository.ListAsync(new UserListQuery(new PageQuery(1, 10), Email: created.Email));
             Assert.Single(page.Data);
             Assert.Equal("Updated", page.Data[0].Name.Firstname);
+
+            var filtered = await repository.ListAsync(new UserListQuery(
+                new PageQuery(1, 10, "username asc"),
+                Email: created.Email,
+                Status: UserStatus.Active,
+                Role: UserRole.Customer));
+            Assert.Single(filtered.Data);
+            Assert.Equal(created.Id, filtered.Data[0].Id);
         }
         finally
         {
@@ -80,6 +89,14 @@ public sealed class RepositoryIntegrationTests(IntegrationTestDatabase database)
             Assert.Contains(page.Data, item => item.Id == created.Id);
             Assert.Contains(product.Category, await repository.ListCategoriesAsync());
 
+            var range = await repository.ListAsync(new ProductListQuery(
+                new PageQuery(1, 1, "price desc"),
+                Category: product.Category,
+                MinPrice: 20m,
+                MaxPrice: 30m));
+            Assert.Single(range.Data);
+            Assert.Equal(created.Id, range.Data[0].Id);
+
             created.Price = 30m;
             await repository.UpdateAsync(created);
             Assert.Equal(30m, (await repository.GetByIdAsync(created.Id))!.Price);
@@ -109,6 +126,15 @@ public sealed class RepositoryIntegrationTests(IntegrationTestDatabase database)
 
             var filtered = await repository.ListAsync(new CartListQuery(new PageQuery(1, 10), UserId: cart.UserId));
             Assert.Contains(filtered.Data, item => item.Id == created.Id);
+
+            var dateFiltered = await repository.ListAsync(new CartListQuery(
+                new PageQuery(1, 1, "date desc"),
+                UserId: cart.UserId,
+                Date: cart.Date,
+                MinDate: cart.Date.AddDays(-1),
+                MaxDate: cart.Date.AddDays(1)));
+            Assert.Single(dateFiltered.Data);
+            Assert.Equal(created.Id, dateFiltered.Data[0].Id);
 
             var update = new Cart { Id = created.Id, UserId = cart.UserId, Date = cart.Date.AddDays(1) };
             update.AddItem(1, 4);
@@ -148,6 +174,16 @@ public sealed class RepositoryIntegrationTests(IntegrationTestDatabase database)
             var filtered = await repository.ListAsync(new SaleListQuery(new PageQuery(1, 10), SaleNumber: sale.SaleNumber));
             Assert.Contains(filtered.Data, item => item.Id == created.Id);
 
+            var dateAndStatusFiltered = await repository.ListAsync(new SaleListQuery(
+                new PageQuery(1, 1, "date desc"),
+                SaleNumber: sale.SaleNumber,
+                Status: "Active",
+                Date: sale.Date,
+                MinDate: sale.Date.AddDays(-1),
+                MaxDate: sale.Date.AddDays(1)));
+            Assert.Single(dateAndStatusFiltered.Data);
+            Assert.Equal(created.Id, dateAndStatusFiltered.Data[0].Id);
+
             var update = new Sale
             {
                 Id = created.Id,
@@ -171,4 +207,72 @@ public sealed class RepositoryIntegrationTests(IntegrationTestDatabase database)
             }
         }
     }
+
+    [Fact]
+    public async Task User_database_should_enforce_unique_email_and_username()
+    {
+        var suffix = Guid.NewGuid().ToString("N")[..12];
+        var firstUser = new User
+        {
+            Username = $"unique-user-{suffix}",
+            Email = $"unique-user-{suffix}@example.com",
+            Password = "hashed-password",
+            Phone = "+5592987654321",
+            Status = UserStatus.Active,
+            Role = UserRole.Customer,
+            Name = new Name { Firstname = "Unique", Lastname = "User" },
+            Address = new Address
+            {
+                City = "Manaus",
+                Street = "Unique Street",
+                Number = 10,
+                Zipcode = "69000-000",
+                Geolocation = new Geolocation { Lat = "-3.1", Long = "-60.0" }
+            }
+        };
+
+        await using var context = database.CreateContext();
+        var repository = new UserRepository(context);
+        await repository.CreateAsync(firstUser);
+
+        try
+        {
+            await using (var duplicateEmailContext = database.CreateContext())
+            {
+                var duplicateEmail = CloneUser(firstUser, $"unique-email-{suffix}", firstUser.Email);
+                await duplicateEmailContext.Users.AddAsync(duplicateEmail);
+                await Assert.ThrowsAsync<DbUpdateException>(() => duplicateEmailContext.SaveChangesAsync());
+            }
+
+            await using (var duplicateUsernameContext = database.CreateContext())
+            {
+                var duplicateUsername = CloneUser(firstUser, firstUser.Username, $"unique-username-{suffix}@example.com");
+                await duplicateUsernameContext.Users.AddAsync(duplicateUsername);
+                await Assert.ThrowsAsync<DbUpdateException>(() => duplicateUsernameContext.SaveChangesAsync());
+            }
+        }
+        finally
+        {
+            await repository.DeleteAsync(firstUser.Id);
+        }
+    }
+
+    private static User CloneUser(User source, string username, string email) => new()
+    {
+        Username = username,
+        Email = email,
+        Password = source.Password,
+        Phone = "+5592987654322",
+        Status = source.Status,
+        Role = source.Role,
+        Name = new Name { Firstname = source.Name.Firstname, Lastname = source.Name.Lastname },
+        Address = new Address
+        {
+            City = source.Address.City,
+            Street = source.Address.Street,
+            Number = source.Address.Number,
+            Zipcode = source.Address.Zipcode,
+            Geolocation = new Geolocation { Lat = source.Address.Geolocation.Lat, Long = source.Address.Geolocation.Long }
+        }
+    };
 }

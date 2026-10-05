@@ -13,3 +13,17 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+
+  ambev.developerevaluation.nosql.test:
+    container_name: ambev_developer_evaluation_nosql_test
+    image: mongo:8.0
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: developer_test
+      MONGO_INITDB_ROOT_PASSWORD: ev@luAt10n_test
+    ports:
+      - "27018:27017"
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --quiet --eval 'db.runCommand({ ping: 1 }).ok' | grep 1"]
+      interval: 5s
+      timeout: 10s
+      retries: 10

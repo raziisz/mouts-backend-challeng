@@ -31,6 +31,16 @@ Response format:
 }
 ```
 
+### Swagger / OpenAPI
+
+The interactive Swagger UI is enabled in the Development environment. When
+running the application through Docker Compose, access it at:
+
+`http://localhost:8080/swagger`
+
+The API is intentionally configured for HTTP during development. Swagger is
+not enabled by the application in non-Development environments.
+
 ### Pagination
 
 Pagination is supported for list endpoints using the following query parameters:
