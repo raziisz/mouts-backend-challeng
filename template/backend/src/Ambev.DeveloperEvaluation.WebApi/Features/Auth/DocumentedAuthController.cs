@@ -2,10 +2,12 @@ using Ambev.DeveloperEvaluation.Application.Auth.AuthenticateUser;
 using Ambev.DeveloperEvaluation.WebApi.Features.Auth.AuthenticateUserFeature;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Ambev.DeveloperEvaluation.WebApi.Features.Auth;
 
 [ApiController]
+[AllowAnonymous]
 [Route("auth")]
 public class DocumentedAuthController(IMediator mediator) : ControllerBase
 {

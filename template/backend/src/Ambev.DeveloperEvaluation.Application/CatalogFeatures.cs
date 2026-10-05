@@ -120,7 +120,7 @@ namespace Ambev.DeveloperEvaluation.Application.Sales
     public class SaleResult { public int Id { get; set; } public string SaleNumber { get; set; } = string.Empty; public DateTime Date { get; set; } public ExternalIdentity Customer { get; set; } = new(); public ExternalIdentity Branch { get; set; } = new(); public string Status { get; set; } = string.Empty; public decimal TotalAmount { get; set; } public List<SaleItemResult> Products { get; set; } = []; }
     public class SaleItemInputModel { public int ProductId { get; set; } public string ProductDescription { get; set; } = string.Empty; public decimal UnitPrice { get; set; } public int Quantity { get; set; } }
     public record CreateSaleCommand(string SaleNumber, DateTime Date, int CustomerId, string CustomerDescription, int BranchId, string BranchDescription, List<SaleItemInputModel> Products) : IRequest<SaleResult>;
-    public record GetSalesQuery(int Page = 1, int Size = 10, string? Order = null, string? SaleNumber = null, string? Status = null, DateTime? Date = null, DateTime? MinDate = null, DateTime? MaxDate = null) : IRequest<PagedResult<SaleResult>>;
+    public record GetSalesQuery(int Page = 1, int Size = 10, string? Order = null, string? SaleNumber = null, string? Status = null, DateTime? Date = null, DateTime? MinDate = null, DateTime? MaxDate = null, int? CustomerId = null) : IRequest<PagedResult<SaleResult>>;
     public record GetSaleQuery(int Id) : IRequest<SaleResult>;
     public record UpdateSaleCommand(int Id, string SaleNumber, DateTime Date, int CustomerId, string CustomerDescription, int BranchId, string BranchDescription, List<SaleItemInputModel> Products) : IRequest<SaleResult>;
     public record CancelSaleCommand(int Id) : IRequest<SaleResult>;
@@ -148,7 +148,7 @@ namespace Ambev.DeveloperEvaluation.Application.Sales
     }
     public class GetSalesHandler(ISaleRepository repository) : IRequestHandler<GetSalesQuery, PagedResult<SaleResult>>
     {
-        public async Task<PagedResult<SaleResult>> Handle(GetSalesQuery request, CancellationToken cancellationToken) => SaleMappings.ToPage(await repository.ListAsync(new SaleListQuery(new PageQuery(request.Page, request.Size, request.Order), request.SaleNumber, request.Status, request.Date, request.MinDate, request.MaxDate), cancellationToken));
+        public async Task<PagedResult<SaleResult>> Handle(GetSalesQuery request, CancellationToken cancellationToken) => SaleMappings.ToPage(await repository.ListAsync(new SaleListQuery(new PageQuery(request.Page, request.Size, request.Order), request.SaleNumber, request.Status, request.Date, request.MinDate, request.MaxDate, request.CustomerId), cancellationToken));
     }
     public class GetSaleHandler(ISaleRepository repository) : IRequestHandler<GetSaleQuery, SaleResult>
     {

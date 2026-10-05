@@ -3,12 +3,14 @@ using Ambev.DeveloperEvaluation.Application.Products;
 using Ambev.DeveloperEvaluation.Application.Sales;
 using Ambev.DeveloperEvaluation.Domain.Entities;
 using Ambev.DeveloperEvaluation.WebApi.Common;
+using Microsoft.AspNetCore.Authorization;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Ambev.DeveloperEvaluation.WebApi.Features.Catalog;
 
 [ApiController]
+[Authorize]
 [Route("products")]
 public class ProductsController(IMediator mediator) : ControllerBase
 {
@@ -28,12 +30,15 @@ public class ProductsController(IMediator mediator) : ControllerBase
     public async Task<IActionResult> Get(int id, CancellationToken cancellationToken) => Ok(await mediator.Send(new GetProductQuery(id), cancellationToken));
 
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Create(ProductRequest request, CancellationToken cancellationToken) { var result = await mediator.Send(request.ToCommand(), cancellationToken); return CreatedAtAction(nameof(Get), new { id = result.Id }, result); }
 
     [HttpPut("{id:int}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Update(int id, ProductRequest request, CancellationToken cancellationToken) => Ok(await mediator.Send(request.ToCommand(id), cancellationToken));
 
     [HttpDelete("{id:int}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken) { if (!await mediator.Send(new DeleteProductCommand(id), cancellationToken)) return NotFound(new ApiErrorResponse { Type = "ResourceNotFound", Error = "Resource not found", Detail = $"Product {id} was not found." }); return Ok(new { message = "Product deleted successfully" }); }
 
 }
@@ -47,18 +52,48 @@ public sealed class ProductRequest
 public sealed class ProductRatingRequest { public decimal Rate { get; set; } public int Count { get; set; } }
 
 [ApiController]
+[Authorize]
 [Route("carts")]
 public class CartsController(IMediator mediator) : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> List([FromQuery(Name = "_page")] int page = 1, [FromQuery(Name = "_size")] int size = 10, [FromQuery(Name = "_order")] string? order = null, int? userId = null, DateTime? date = null, DateTime? _minDate = null, DateTime? _maxDate = null, CancellationToken cancellationToken = default)
     {
+        if (!User.IsPrivileged()) userId = User.GetRequiredUserId();
         return Ok(await mediator.Send(new GetCartsQuery(page, size, order, userId, date, _minDate, _maxDate), cancellationToken));
     }
-    [HttpGet("{id:int}")] public async Task<IActionResult> Get(int id, CancellationToken cancellationToken) => Ok(await mediator.Send(new GetCartQuery(id), cancellationToken));
-    [HttpPost] public async Task<IActionResult> Create(CartRequest request, CancellationToken cancellationToken) { var result = await mediator.Send(request.ToCreate(), cancellationToken); return CreatedAtAction(nameof(Get), new { id = result.Id }, result); }
-    [HttpPut("{id:int}")] public async Task<IActionResult> Update(int id, CartRequest request, CancellationToken cancellationToken) => Ok(await mediator.Send(request.ToUpdate(id), cancellationToken));
-    [HttpDelete("{id:int}")] public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken) { if (!await mediator.Send(new DeleteCartCommand(id), cancellationToken)) return NotFound(new ApiErrorResponse { Type = "ResourceNotFound", Error = "Resource not found", Detail = $"Cart {id} was not found." }); return Ok(new { message = "Cart deleted successfully" }); }
+    [HttpGet("{id:int}")]
+    public async Task<IActionResult> Get(int id, CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(new GetCartQuery(id), cancellationToken);
+        if (!User.IsPrivileged() && result.UserId != User.GetRequiredUserId()) return Forbid();
+        return Ok(result);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Create(CartRequest request, CancellationToken cancellationToken)
+    {
+        if (!User.IsPrivileged() && request.UserId != User.GetRequiredUserId()) return Forbid();
+        var result = await mediator.Send(request.ToCreate(), cancellationToken);
+        return CreatedAtAction(nameof(Get), new { id = result.Id }, result);
+    }
+
+    [HttpPut("{id:int}")]
+    public async Task<IActionResult> Update(int id, CartRequest request, CancellationToken cancellationToken)
+    {
+        var current = await mediator.Send(new GetCartQuery(id), cancellationToken);
+        if (!User.IsPrivileged() && (current.UserId != User.GetRequiredUserId() || request.UserId != current.UserId)) return Forbid();
+        return Ok(await mediator.Send(request.ToUpdate(id), cancellationToken));
+    }
+
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
+    {
+        var current = await mediator.Send(new GetCartQuery(id), cancellationToken);
+        if (!User.IsPrivileged() && current.UserId != User.GetRequiredUserId()) return Forbid();
+        if (!await mediator.Send(new DeleteCartCommand(id), cancellationToken)) return NotFound(new ApiErrorResponse { Type = "ResourceNotFound", Error = "Resource not found", Detail = $"Cart {id} was not found." });
+        return Ok(new { message = "Cart deleted successfully" });
+    }
 }
 public sealed class CartRequest
 {
@@ -67,18 +102,40 @@ public sealed class CartRequest
 }
 
 [ApiController]
+[Authorize]
 [Route("sales")]
 public class SalesController(IMediator mediator) : ControllerBase
 {
     [HttpGet] public async Task<IActionResult> List([FromQuery(Name = "_page")] int page = 1, [FromQuery(Name = "_size")] int size = 10, [FromQuery(Name = "_order")] string? order = null, string? saleNumber = null, string? status = null, DateTime? date = null, DateTime? _minDate = null, DateTime? _maxDate = null, CancellationToken cancellationToken = default)
     {
-        return Ok(await mediator.Send(new GetSalesQuery(page, size, order, saleNumber, status, date, _minDate, _maxDate), cancellationToken));
+        int? customerId = User.IsPrivileged() ? null : User.GetRequiredUserId();
+        return Ok(await mediator.Send(new GetSalesQuery(page, size, order, saleNumber, status, date, _minDate, _maxDate, customerId), cancellationToken));
     }
-    [HttpGet("{id:int}")] public async Task<IActionResult> Get(int id, CancellationToken cancellationToken) => Ok(await mediator.Send(new GetSaleQuery(id), cancellationToken));
-    [HttpPost] public async Task<IActionResult> Create(SaleRequest request, CancellationToken cancellationToken) { var result = await mediator.Send(request.ToCreate(), cancellationToken); return CreatedAtAction(nameof(Get), new { id = result.Id }, result); }
-    [HttpPut("{id:int}")] public async Task<IActionResult> Update(int id, SaleRequest request, CancellationToken cancellationToken) => Ok(await mediator.Send(request.ToUpdate(id), cancellationToken));
-    [HttpDelete("{id:int}")] public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken) => Ok(await mediator.Send(new CancelSaleCommand(id), cancellationToken));
-    [HttpPatch("{saleId:int}/items/{itemId:int}/cancel")] public async Task<IActionResult> CancelItem(int saleId, int itemId, CancellationToken cancellationToken) => Ok(await mediator.Send(new CancelSaleItemCommand(saleId, itemId), cancellationToken));
+    [HttpGet("{id:int}")] public async Task<IActionResult> Get(int id, CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(new GetSaleQuery(id), cancellationToken);
+        if (!User.IsPrivileged() && result.Customer.Id != User.GetRequiredUserId()) return Forbid();
+        return Ok(result);
+    }
+
+    [HttpPost] public async Task<IActionResult> Create(SaleRequest request, CancellationToken cancellationToken)
+    {
+        if (!User.IsPrivileged() && request.Customer.Id != User.GetRequiredUserId()) return Forbid();
+        var result = await mediator.Send(request.ToCreate(), cancellationToken);
+        return CreatedAtAction(nameof(Get), new { id = result.Id }, result);
+    }
+
+    [HttpPut("{id:int}")]
+    [Authorize(Roles = "Admin,Manager")]
+    public async Task<IActionResult> Update(int id, SaleRequest request, CancellationToken cancellationToken) => Ok(await mediator.Send(request.ToUpdate(id), cancellationToken));
+
+    [HttpDelete("{id:int}")]
+    [Authorize(Roles = "Admin,Manager")]
+    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken) => Ok(await mediator.Send(new CancelSaleCommand(id), cancellationToken));
+
+    [HttpPatch("{saleId:int}/items/{itemId:int}/cancel")]
+    [Authorize(Roles = "Admin,Manager")]
+    public async Task<IActionResult> CancelItem(int saleId, int itemId, CancellationToken cancellationToken) => Ok(await mediator.Send(new CancelSaleItemCommand(saleId, itemId), cancellationToken));
 
 }
 public sealed class SaleRequest

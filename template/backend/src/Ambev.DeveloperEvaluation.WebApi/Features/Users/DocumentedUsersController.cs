@@ -5,10 +5,12 @@ using Ambev.DeveloperEvaluation.WebApi.Features.Users.CreateUser;
 using Ambev.DeveloperEvaluation.WebApi.Features.Users;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Ambev.DeveloperEvaluation.WebApi.Features.Users;
 
 [ApiController]
+[Authorize(Roles = "Admin")]
 [Route("users")]
 public class DocumentedUsersController(IMediator mediator) : ControllerBase
 {
