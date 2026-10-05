@@ -69,4 +69,18 @@ public class SaleTests
         sale.Items[1].IsCancelled.Should().BeFalse();
         sale.TotalAmount.Should().Be(40m);
     }
+
+    [Fact]
+    public void Replacing_items_on_cancelled_sale_should_keep_items_cancelled()
+    {
+        var sale = new Sale();
+        sale.AddItem(1, "Product", 10m, 2);
+        sale.Cancel();
+
+        sale.ReplaceItems([new SaleItemInput(2, "Replacement", 25m, 4)]);
+
+        sale.Status.Should().Be(SaleStatus.Cancelled);
+        sale.Items.Should().OnlyContain(item => item.IsCancelled);
+        sale.TotalAmount.Should().Be(0m);
+    }
 }

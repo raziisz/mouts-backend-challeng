@@ -127,6 +127,30 @@ public sealed class SalesFunctionalTests(FunctionalApiFixture fixture)
                 Assert.Equal(0m, cancelledSale.GetProperty("totalAmount").GetDecimal());
             }
 
+            using var cancelledSaleUpdate = await fixture.SendAsync(
+                HttpMethod.Put,
+                $"/api/sales/{saleId}",
+                managerToken,
+                new
+                {
+                    saleNumber = $"FUNCTIONAL-SALE-CANCELLED-UPDATE-{suffix}",
+                    date = DateTime.UtcNow,
+                    customer = new { id = customerId, description = "Functional customer" },
+                    branch = new { id = 1, description = "Functional branch" },
+                    products = new[]
+                    {
+                        new { productId, productDescription = "Functional product", unitPrice = 20m, quantity = 2 }
+                    }
+                });
+            Assert.Equal(HttpStatusCode.OK, cancelledSaleUpdate.StatusCode);
+            using (var cancelledUpdateDocument = await FunctionalApiFixture.ReadDocumentAsync(cancelledSaleUpdate))
+            {
+                var cancelledUpdate = cancelledUpdateDocument.RootElement;
+                Assert.Equal("Cancelled", cancelledUpdate.GetProperty("status").GetString());
+                Assert.Equal(0m, cancelledUpdate.GetProperty("totalAmount").GetDecimal());
+                Assert.True(cancelledUpdate.GetProperty("products")[0].GetProperty("isCancelled").GetBoolean());
+            }
+
             using var excessiveQuantityResponse = await fixture.SendAsync(
                 HttpMethod.Post,
                 "/api/sales",

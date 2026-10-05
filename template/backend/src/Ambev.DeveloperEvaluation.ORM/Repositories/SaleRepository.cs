@@ -85,12 +85,16 @@ public class SaleRepository(DefaultContext context) : ISaleRepository
         current.Branch.Id = sale.Branch.Id;
         current.Branch.Description = sale.Branch.Description;
 
+        if (sale.Status == SaleStatus.Cancelled)
+            current.Cancel();
+
         context.SaleItems.RemoveRange(current.Items);
         current.Items.Clear();
 
         foreach (var item in sale.Items)
         {
             current.AddItem(item.ProductId, item.ProductDescription, item.UnitPrice, item.Quantity);
+            current.Items[^1].IsCancelled = item.IsCancelled;
         }
 
         await context.SaveChangesAsync(cancellationToken);

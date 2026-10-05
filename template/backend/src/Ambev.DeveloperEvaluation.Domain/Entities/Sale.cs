@@ -40,9 +40,16 @@ public class Sale : BaseEntity
 
     public void ReplaceItems(IEnumerable<SaleItemInput> items)
     {
+        var wasCancelled = Status == SaleStatus.Cancelled;
         Items.Clear();
         foreach (var item in items)
             AddItem(item.ProductId, item.ProductDescription, item.UnitPrice, item.Quantity);
+
+        if (wasCancelled)
+        {
+            foreach (var item in Items)
+                item.IsCancelled = true;
+        }
     }
 
     public void Cancel()
