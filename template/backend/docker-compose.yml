@@ -8,7 +8,6 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_HTTP_PORTS=8080
-      - ASPNETCORE_HTTPS_PORTS=8081
       - ConnectionStrings__DefaultConnection=Host=ambev.developerevaluation.database;Database=developer_evaluation;Username=developer;Password=ev@luAt10n
       - ConnectionStrings__MongoDb=mongodb://developer:ev%40luAt10n@ambev.developerevaluation.nosql:27017/?authSource=admin
     depends_on:
@@ -16,10 +15,8 @@ services:
       - ambev.developerevaluation.nosql
     ports:
       - "8080:8080"
-      - "8081:8081"
     volumes:
       - ${APPDATA}/Microsoft/UserSecrets:/home/app/.microsoft/usersecrets:ro
-      - ${APPDATA}/ASP.NET/Https:/home/app/.aspnet/https:ro
 
   ambev.developerevaluation.database:
     container_name: ambev_developer_evaluation_database
