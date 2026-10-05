@@ -17,12 +17,15 @@ public sealed class AuthorizationFunctionalTests(FunctionalApiFixture fixture)
     [Fact(DisplayName = "Anonymous users must be rejected and roles must follow the authorization matrix")]
     public async Task Should_enforce_role_permissions()
     {
-        var anonymousResponse = await fixture.SendAsync(HttpMethod.Get, "/api/products");
-        await FunctionalApiFixture.AssertErrorResponseAsync(
-            anonymousResponse,
-            HttpStatusCode.Unauthorized,
-            "AuthenticationError",
-            "Authentication failed");
+        foreach (var path in new[] { "/api/users", "/api/products", "/api/carts", "/api/sales" })
+        {
+            using var anonymousResponse = await fixture.SendAsync(HttpMethod.Get, path);
+            await FunctionalApiFixture.AssertErrorResponseAsync(
+                anonymousResponse,
+                HttpStatusCode.Unauthorized,
+                "AuthenticationError",
+                "Authentication failed");
+        }
 
         var adminToken = await fixture.LoginAsync(AdminEmail, AdminPassword);
         var suffix = Guid.NewGuid().ToString("N")[..12];
@@ -183,6 +186,27 @@ public sealed class AuthorizationFunctionalTests(FunctionalApiFixture fixture)
                 "AuthorizationError",
                 "Access denied");
 
+            using var foreignCartUpdate = await fixture.SendAsync(
+                HttpMethod.Put,
+                $"/api/carts/{cartBId}",
+                customerAToken,
+                new { userId = customerBId, date = DateTime.UtcNow, products = Array.Empty<object>() });
+            await FunctionalApiFixture.AssertErrorResponseAsync(
+                foreignCartUpdate,
+                HttpStatusCode.Forbidden,
+                "AuthorizationError",
+                "Access denied");
+
+            using var foreignCartDelete = await fixture.SendAsync(
+                HttpMethod.Delete,
+                $"/api/carts/{cartBId}",
+                customerAToken);
+            await FunctionalApiFixture.AssertErrorResponseAsync(
+                foreignCartDelete,
+                HttpStatusCode.Forbidden,
+                "AuthorizationError",
+                "Access denied");
+
             using var foreignSaleCreation = await fixture.SendAsync(
                 HttpMethod.Post,
                 "/api/sales",
@@ -203,6 +227,41 @@ public sealed class AuthorizationFunctionalTests(FunctionalApiFixture fixture)
                 HttpStatusCode.Forbidden,
                 "AuthorizationError",
                 "Access denied");
+
+            int saleBItemId;
+            using (var customerBSale = await fixture.SendAsync(HttpMethod.Get, $"/api/sales/{saleBId}", customerBToken))
+            {
+                Assert.Equal(HttpStatusCode.OK, customerBSale.StatusCode);
+                using var saleDocument = await FunctionalApiFixture.ReadDocumentAsync(customerBSale);
+                saleBItemId = saleDocument.RootElement.GetProperty("products")[0].GetProperty("id").GetInt32();
+            }
+
+            using var foreignSaleDelete = await fixture.SendAsync(
+                HttpMethod.Delete,
+                $"/api/sales/{saleBId}",
+                customerAToken);
+            await FunctionalApiFixture.AssertErrorResponseAsync(
+                foreignSaleDelete,
+                HttpStatusCode.Forbidden,
+                "AuthorizationError",
+                "Access denied");
+
+            using var foreignSaleItemCancel = await fixture.SendAsync(
+                HttpMethod.Patch,
+                $"/api/sales/{saleBId}/items/{saleBItemId}/cancel",
+                customerAToken);
+            await FunctionalApiFixture.AssertErrorResponseAsync(
+                foreignSaleItemCancel,
+                HttpStatusCode.Forbidden,
+                "AuthorizationError",
+                "Access denied");
+
+            using var ownCartDelete = await fixture.SendAsync(
+                HttpMethod.Delete,
+                $"/api/carts/{cartAId}",
+                customerAToken);
+            Assert.Equal(HttpStatusCode.OK, ownCartDelete.StatusCode);
+            cartAId = 0;
         }
         finally
         {
