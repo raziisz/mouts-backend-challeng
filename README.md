@@ -70,6 +70,9 @@ This section includes links to the detailed documentation for the different API 
 - [Users API](./.doc/users-api.md)
 - [Auth API](./.doc/auth-api.md)
 
+## Development Setup
+See [Development Setup](./.doc/development-setup.md) for prerequisites, Docker Compose, configuration, migrations, seed data and test commands.
+
 Swagger UI (Development): [http://localhost:8080/swagger](http://localhost:8080/swagger)
 
 ## Project Structure
