@@ -11,7 +11,7 @@ namespace Ambev.DeveloperEvaluation.WebApi.Features.Users;
 
 [ApiController]
 [Authorize(Roles = "Admin")]
-[Route("users")]
+[Route("api/users")]
 public class DocumentedUsersController(IMediator mediator) : ControllerBase
 {
     [HttpGet]
@@ -32,7 +32,7 @@ public class DocumentedUsersController(IMediator mediator) : ControllerBase
     {
         var command = new CreateUserCommand { Username = request.Username, Password = request.Password, Phone = request.Phone, Email = request.Email, Name = new UserNameModel { Firstname = request.Name.Firstname, Lastname = request.Name.Lastname }, Address = new UserAddressModel { City = request.Address.City, Street = request.Address.Street, Number = request.Address.Number, Zipcode = request.Address.Zipcode, Geolocation = new UserGeolocationModel { Lat = request.Address.Geolocation.Lat, Long = request.Address.Geolocation.Long } }, Status = request.Status, Role = request.Role };
         var result = await mediator.Send(command, cancellationToken);
-        return Created($"/users/{result.Id}", result);
+        return Created($"/api/users/{result.Id}", result);
     }
 
     [HttpGet("{id:int}")]
@@ -43,4 +43,15 @@ public class DocumentedUsersController(IMediator mediator) : ControllerBase
 
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken) => Ok(await mediator.Send(new Ambev.DeveloperEvaluation.Application.Users.DeleteUser.DeleteUserCommand(id), cancellationToken));
+}
+
+public sealed class UpdateUserRequest
+{
+    public string Username { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public UserNameRequest Name { get; set; } = new();
+    public string Phone { get; set; } = string.Empty;
+    public UserAddressRequest Address { get; set; } = new();
+    public UserStatus Status { get; set; }
+    public UserRole Role { get; set; }
 }

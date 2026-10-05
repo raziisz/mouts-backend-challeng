@@ -17,7 +17,7 @@ public sealed class AuthorizationFunctionalTests(FunctionalApiFixture fixture)
     [Fact(DisplayName = "Anonymous users must be rejected and roles must follow the authorization matrix")]
     public async Task Should_enforce_role_permissions()
     {
-        var anonymousResponse = await fixture.SendAsync(HttpMethod.Get, "/products");
+        var anonymousResponse = await fixture.SendAsync(HttpMethod.Get, "/api/products");
         Assert.Equal(HttpStatusCode.Unauthorized, anonymousResponse.StatusCode);
 
         var adminToken = await fixture.LoginAsync(AdminUsername, AdminPassword);
@@ -33,15 +33,15 @@ public sealed class AuthorizationFunctionalTests(FunctionalApiFixture fixture)
             var customerToken = await fixture.LoginAsync(customerUsername, "User@123");
             var managerToken = await fixture.LoginAsync(managerUsername, "User@123");
 
-            using var customerProducts = await fixture.SendAsync(HttpMethod.Get, "/products", customerToken);
+            using var customerProducts = await fixture.SendAsync(HttpMethod.Get, "/api/products", customerToken);
             Assert.Equal(HttpStatusCode.OK, customerProducts.StatusCode);
 
-            using var customerUsers = await fixture.SendAsync(HttpMethod.Get, "/users", customerToken);
+            using var customerUsers = await fixture.SendAsync(HttpMethod.Get, "/api/users", customerToken);
             Assert.Equal(HttpStatusCode.Forbidden, customerUsers.StatusCode);
 
             using var customerProductCreate = await fixture.SendAsync(
                 HttpMethod.Post,
-                "/products",
+                "/api/products",
                 customerToken,
                 new
                 {
@@ -54,12 +54,12 @@ public sealed class AuthorizationFunctionalTests(FunctionalApiFixture fixture)
                 });
             Assert.Equal(HttpStatusCode.Forbidden, customerProductCreate.StatusCode);
 
-            using var managerUsers = await fixture.SendAsync(HttpMethod.Get, "/users", managerToken);
+            using var managerUsers = await fixture.SendAsync(HttpMethod.Get, "/api/users", managerToken);
             Assert.Equal(HttpStatusCode.Forbidden, managerUsers.StatusCode);
 
             using var managerProductCreate = await fixture.SendAsync(
                 HttpMethod.Post,
-                "/products",
+                "/api/products",
                 managerToken,
                 new
                 {
@@ -72,20 +72,20 @@ public sealed class AuthorizationFunctionalTests(FunctionalApiFixture fixture)
                 });
             Assert.Equal(HttpStatusCode.Forbidden, managerProductCreate.StatusCode);
 
-            using var managerSales = await fixture.SendAsync(HttpMethod.Get, "/sales", managerToken);
+            using var managerSales = await fixture.SendAsync(HttpMethod.Get, "/api/sales", managerToken);
             Assert.Equal(HttpStatusCode.OK, managerSales.StatusCode);
 
             productId = await fixture.CreateProductAsync(adminToken);
-            using var adminProduct = await fixture.SendAsync(HttpMethod.Get, $"/products/{productId}", adminToken);
+            using var adminProduct = await fixture.SendAsync(HttpMethod.Get, $"/api/products/{productId}", adminToken);
             Assert.Equal(HttpStatusCode.OK, adminProduct.StatusCode);
         }
         finally
         {
             if (productId > 0)
-                await fixture.DeleteAsync(adminToken, $"/products/{productId}");
+                await fixture.DeleteAsync(adminToken, $"/api/products/{productId}");
 
-            await fixture.DeleteAsync(adminToken, $"/users/{customerId}");
-            await fixture.DeleteAsync(adminToken, $"/users/{managerId}");
+            await fixture.DeleteAsync(adminToken, $"/api/users/{customerId}");
+            await fixture.DeleteAsync(adminToken, $"/api/users/{managerId}");
         }
     }
 
@@ -114,7 +114,7 @@ public sealed class AuthorizationFunctionalTests(FunctionalApiFixture fixture)
             saleAId = await fixture.CreateSaleAsync(customerAToken, customerAId, productId);
             saleBId = await fixture.CreateSaleAsync(customerBToken, customerBId, productId);
 
-            using var customerACarts = await fixture.SendAsync(HttpMethod.Get, "/carts", customerAToken);
+            using var customerACarts = await fixture.SendAsync(HttpMethod.Get, "/api/carts", customerAToken);
             Assert.Equal(HttpStatusCode.OK, customerACarts.StatusCode);
             using (var cartsDocument = await FunctionalApiFixture.ReadDocumentAsync(customerACarts))
             {
@@ -126,7 +126,7 @@ public sealed class AuthorizationFunctionalTests(FunctionalApiFixture fixture)
                 Assert.DoesNotContain(cartBId, cartIds);
             }
 
-            using var customerASales = await fixture.SendAsync(HttpMethod.Get, "/sales", customerAToken);
+            using var customerASales = await fixture.SendAsync(HttpMethod.Get, "/api/sales", customerAToken);
             Assert.Equal(HttpStatusCode.OK, customerASales.StatusCode);
             using (var salesDocument = await FunctionalApiFixture.ReadDocumentAsync(customerASales))
             {
@@ -138,22 +138,22 @@ public sealed class AuthorizationFunctionalTests(FunctionalApiFixture fixture)
                 Assert.DoesNotContain(customerBId, salesCustomerIds);
             }
 
-            using var otherCart = await fixture.SendAsync(HttpMethod.Get, $"/carts/{cartBId}", customerAToken);
+            using var otherCart = await fixture.SendAsync(HttpMethod.Get, $"/api/carts/{cartBId}", customerAToken);
             Assert.Equal(HttpStatusCode.Forbidden, otherCart.StatusCode);
 
-            using var otherSale = await fixture.SendAsync(HttpMethod.Get, $"/sales/{saleBId}", customerAToken);
+            using var otherSale = await fixture.SendAsync(HttpMethod.Get, $"/api/sales/{saleBId}", customerAToken);
             Assert.Equal(HttpStatusCode.Forbidden, otherSale.StatusCode);
 
             using var foreignCartCreation = await fixture.SendAsync(
                 HttpMethod.Post,
-                "/carts",
+                "/api/carts",
                 customerAToken,
                 new { userId = customerBId, date = DateTime.UtcNow, products = Array.Empty<object>() });
             Assert.Equal(HttpStatusCode.Forbidden, foreignCartCreation.StatusCode);
 
             using var foreignSaleCreation = await fixture.SendAsync(
                 HttpMethod.Post,
-                "/sales",
+                "/api/sales",
                 customerAToken,
                 new
                 {
@@ -171,17 +171,17 @@ public sealed class AuthorizationFunctionalTests(FunctionalApiFixture fixture)
         finally
         {
             if (saleAId > 0)
-                await fixture.DeleteAsync(adminToken, $"/sales/{saleAId}");
+                await fixture.DeleteAsync(adminToken, $"/api/sales/{saleAId}");
             if (saleBId > 0)
-                await fixture.DeleteAsync(adminToken, $"/sales/{saleBId}");
+                await fixture.DeleteAsync(adminToken, $"/api/sales/{saleBId}");
             if (cartAId > 0)
-                await fixture.DeleteAsync(adminToken, $"/carts/{cartAId}");
+                await fixture.DeleteAsync(adminToken, $"/api/carts/{cartAId}");
             if (cartBId > 0)
-                await fixture.DeleteAsync(adminToken, $"/carts/{cartBId}");
+                await fixture.DeleteAsync(adminToken, $"/api/carts/{cartBId}");
 
-            await fixture.DeleteAsync(adminToken, $"/products/{productId}");
-            await fixture.DeleteAsync(adminToken, $"/users/{customerAId}");
-            await fixture.DeleteAsync(adminToken, $"/users/{customerBId}");
+            await fixture.DeleteAsync(adminToken, $"/api/products/{productId}");
+            await fixture.DeleteAsync(adminToken, $"/api/users/{customerAId}");
+            await fixture.DeleteAsync(adminToken, $"/api/users/{customerBId}");
         }
     }
 }

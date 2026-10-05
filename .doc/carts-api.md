@@ -2,7 +2,7 @@
 
 ### Carts
 
-#### GET /carts
+#### GET /api/carts
 - Description: Retrieve a list of all carts
 - Query Parameters:
   - `_page` (optional): Page number for pagination (default: 1)
@@ -30,7 +30,7 @@
   }
   ```
 
-#### POST /carts
+#### POST /api/carts
 - Description: Add a new cart
 - Request Body:
   ```json
@@ -60,7 +60,7 @@
   }
   ```
 
-#### GET /carts/{id}
+#### GET /api/carts/{id}
 - Description: Retrieve a specific cart by ID
 - Path Parameters:
   - `id`: Cart ID
@@ -79,7 +79,7 @@
   }
   ```
 
-#### PUT /carts/{id}
+#### PUT /api/carts/{id}
 - Description: Update a specific cart
 - Path Parameters:
   - `id`: Cart ID
@@ -111,7 +111,7 @@
   }
   ```
 
-#### DELETE /carts/{id}
+#### DELETE /api/carts/{id}
 - Description: Delete a specific cart
 - Path Parameters:
   - `id`: Cart ID

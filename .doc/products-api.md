@@ -2,7 +2,7 @@
 
 ### Products
 
-#### GET /products
+#### GET /api/products
 - Description: Retrieve a list of all products
 - Query Parameters:
   - `_page` (optional): Page number for pagination (default: 1)
@@ -31,7 +31,7 @@
   }
   ```
 
-#### POST /products
+#### POST /api/products
 - Description: Add a new product
 - Request Body:
   ```json
@@ -63,7 +63,7 @@
   }
   ```
 
-#### GET /products/{id}
+#### GET /api/products/{id}
 - Description: Retrieve a specific product by ID
 - Path Parameters:
   - `id`: Product ID
@@ -83,7 +83,7 @@
   }
   ```
 
-#### PUT /products/{id}
+#### PUT /api/products/{id}
 - Description: Update a specific product
 - Path Parameters:
   - `id`: Product ID
@@ -117,7 +117,7 @@
   }
   ```
 
-#### DELETE /products/{id}
+#### DELETE /api/products/{id}
 - Description: Delete a specific product
 - Path Parameters:
   - `id`: Product ID
@@ -128,7 +128,7 @@
   }
   ```
 
-#### GET /products/categories
+#### GET /api/products/categories
 - Description: Retrieve all product categories
 - Response: 
   ```json
@@ -137,7 +137,7 @@
   ]
   ```
 
-#### GET /products/category/{category}
+#### GET /api/products/category/{category}
 - Description: Retrieve products in a specific category
 - Path Parameters:
   - `category`: Category name

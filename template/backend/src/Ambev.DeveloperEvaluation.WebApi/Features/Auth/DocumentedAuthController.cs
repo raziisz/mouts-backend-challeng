@@ -8,7 +8,7 @@ namespace Ambev.DeveloperEvaluation.WebApi.Features.Auth;
 
 [ApiController]
 [AllowAnonymous]
-[Route("auth")]
+[Route("api/auth")]
 public class DocumentedAuthController(IMediator mediator) : ControllerBase
 {
     [HttpPost("login")]

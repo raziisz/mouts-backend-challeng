@@ -11,7 +11,7 @@ namespace Ambev.DeveloperEvaluation.WebApi.Features.Catalog;
 
 [ApiController]
 [Authorize]
-[Route("products")]
+[Route("api/products")]
 public class ProductsController(IMediator mediator) : ControllerBase
 {
     [HttpGet]
@@ -53,7 +53,7 @@ public sealed class ProductRatingRequest { public decimal Rate { get; set; } pub
 
 [ApiController]
 [Authorize]
-[Route("carts")]
+[Route("api/carts")]
 public class CartsController(IMediator mediator) : ControllerBase
 {
     [HttpGet]
@@ -103,7 +103,7 @@ public sealed class CartRequest
 
 [ApiController]
 [Authorize]
-[Route("sales")]
+[Route("api/sales")]
 public class SalesController(IMediator mediator) : ControllerBase
 {
     [HttpGet] public async Task<IActionResult> List([FromQuery(Name = "_page")] int page = 1, [FromQuery(Name = "_size")] int size = 10, [FromQuery(Name = "_order")] string? order = null, string? saleNumber = null, string? status = null, DateTime? date = null, DateTime? _minDate = null, DateTime? _maxDate = null, CancellationToken cancellationToken = default)

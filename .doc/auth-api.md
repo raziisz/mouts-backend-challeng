@@ -3,7 +3,7 @@
 
 ### Authentication
 
-#### POST /auth/login
+#### POST /api/auth/login
 - Description: Authenticate a user
 - Request Body:
   ```json

@@ -11,7 +11,7 @@ Pagination is supported for list endpoints using the following query parameters:
 
 Example:
 ```
-GET /products?_page=2&_size=20
+GET /api/products?_page=2&_size=20
 ```
 
 ### Ordering
@@ -42,13 +42,13 @@ For example, consider the following Product resource:
 In this case, to retrieve a list of products ordered by price in descending order and then by title in ascending order, the request would look like this:
 
 ```
-GET /products?_order="price desc, title asc"
+GET /api/products?_order="price desc, title asc"
 ```
 
 or 
 
 ```
-GET /products?_order="price desc, title"
+GET /api/products?_order="price desc, title"
 ```
 
 ### Filtering
@@ -60,7 +60,7 @@ Filters can be applied to list endpoints using the following query parameters:
 Example:
 
 ```
-GET /products?category=men's clothing&price=109.95
+GET /api/products?category=men's clothing&price=109.95
 ```
 
 **String Fields**
@@ -70,8 +70,8 @@ To filter partial matches for string fields, use an asterisk (`*`) before or aft
 Example:
 
 ```
-GET /products?title=Fjallraven*
-GET /products?category=*clothing
+GET /api/products?title=Fjallraven*
+GET /api/products?category=*clothing
 ```
 
 **Numeric and Date Fields**
@@ -81,9 +81,9 @@ To filter numeric or date fields by range, use `_min` and `_max` prefixes before
 Example:
 
 ```
-GET /products?_minPrice=50
-GET /products?_minPrice=50&_maxPrice=200
-GET /carts?_minDate=2023-01-01
+GET /api/products?_minPrice=50
+GET /api/products?_minPrice=50&_maxPrice=200
+GET /api/carts?_minDate=2023-01-01
 ```
 
 Logical Operators
@@ -92,8 +92,8 @@ When combining filters, use `&` (AND) between them.
 Example:
 
 ```
-GET /products?category=men's clothing&_minPrice=50
-GET /products?title=Fjallraven*&category=men's clothing&_minPrice=100
+GET /api/products?category=men's clothing&_minPrice=50
+GET /api/products?title=Fjallraven*&category=men's clothing&_minPrice=100
 ```
 
 *Note*

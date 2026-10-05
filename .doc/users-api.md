@@ -2,7 +2,7 @@
 
 ### Users
 
-#### GET /users
+#### GET /api/users
 - Description: Retrieve a list of all users
 - Query Parameters:
   - `_page` (optional): Page number for pagination (default: 1)
@@ -41,7 +41,7 @@
   }
   ```
 
-#### POST /users
+#### POST /api/users
 - Description: Add a new user
 - Request Body:
   ```json
@@ -94,7 +94,7 @@
   }
   ```
 
-#### GET /users/{id}
+#### GET /api/users/{id}
 - Description: Retrieve a specific user by ID
 - Path Parameters:
   - `id`: User ID
@@ -124,7 +124,7 @@
   }
   ```
 
-#### PUT /users/{id}
+#### PUT /api/users/{id}
 - Description: Update a specific user
 - Path Parameters:
   - `id`: User ID
@@ -178,7 +178,7 @@
   }
   ```
 
-#### DELETE /users/{id}
+#### DELETE /api/users/{id}
 - Description: Delete a specific user
 - Path Parameters:
   - `id`: User ID

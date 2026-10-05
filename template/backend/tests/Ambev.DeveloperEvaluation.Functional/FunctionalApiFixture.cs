@@ -45,7 +45,7 @@ public sealed class FunctionalApiFixture : IAsyncLifetime
 
     public async Task<string> LoginAsync(string username, string password)
     {
-        using var response = await SendAsync(HttpMethod.Post, "/auth/login", body: new
+        using var response = await SendAsync(HttpMethod.Post, "/api/auth/login", body: new
         {
             username,
             password
@@ -58,7 +58,7 @@ public sealed class FunctionalApiFixture : IAsyncLifetime
 
     public async Task<int> CreateUserAsync(string adminToken, string username, string role)
     {
-        using var response = await SendAsync(HttpMethod.Post, "/users", adminToken, new
+        using var response = await SendAsync(HttpMethod.Post, "/api/users", adminToken, new
         {
             username,
             email = $"{username}@localhost.com",
@@ -84,7 +84,7 @@ public sealed class FunctionalApiFixture : IAsyncLifetime
 
     public async Task<int> CreateProductAsync(string token)
     {
-        using var response = await SendAsync(HttpMethod.Post, "/products", token, new
+        using var response = await SendAsync(HttpMethod.Post, "/api/products", token, new
         {
             title = $"Functional Product {Guid.NewGuid():N}",
             price = 10,
@@ -101,7 +101,7 @@ public sealed class FunctionalApiFixture : IAsyncLifetime
 
     public async Task<int> CreateCartAsync(string token, int userId)
     {
-        using var response = await SendAsync(HttpMethod.Post, "/carts", token, new
+        using var response = await SendAsync(HttpMethod.Post, "/api/carts", token, new
         {
             userId,
             date = DateTime.UtcNow,
@@ -116,7 +116,7 @@ public sealed class FunctionalApiFixture : IAsyncLifetime
     public async Task<int> CreateSaleAsync(string token, int customerId, int productId)
     {
         var saleNumber = $"FUNCTIONAL-{Guid.NewGuid():N}";
-        using var response = await SendAsync(HttpMethod.Post, "/sales", token, new
+        using var response = await SendAsync(HttpMethod.Post, "/api/sales", token, new
         {
             saleNumber,
             date = DateTime.UtcNow,
