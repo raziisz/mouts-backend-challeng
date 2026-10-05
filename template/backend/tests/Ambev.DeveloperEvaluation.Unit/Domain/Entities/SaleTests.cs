@@ -1,4 +1,5 @@
 using Ambev.DeveloperEvaluation.Domain.Entities;
+using Ambev.DeveloperEvaluation.Domain.Enums;
 using Ambev.DeveloperEvaluation.Domain.Exceptions;
 using FluentAssertions;
 using Xunit;
@@ -37,5 +38,35 @@ public class SaleTests
 
         sale.TotalAmount.Should().Be(80m);
         sale.Items.Single().DiscountAmount.Should().Be(20m);
+    }
+
+    [Fact]
+    public void Cancelling_sale_should_cancel_all_items_and_zero_total()
+    {
+        var sale = new Sale();
+        sale.AddItem(1, "Product 1", 10m, 4);
+        sale.AddItem(2, "Product 2", 20m, 2);
+
+        sale.Cancel();
+
+        sale.Status.Should().Be(SaleStatus.Cancelled);
+        sale.Items.Should().OnlyContain(item => item.IsCancelled);
+        sale.TotalAmount.Should().Be(0m);
+    }
+
+    [Fact]
+    public void Cancelling_item_should_preserve_other_items_total()
+    {
+        var sale = new Sale();
+        sale.AddItem(1, "Product 1", 10m, 4);
+        sale.AddItem(2, "Product 2", 20m, 2);
+        sale.Items[0].Id = 10;
+        sale.Items[1].Id = 11;
+
+        sale.CancelItem(10);
+
+        sale.Items[0].IsCancelled.Should().BeTrue();
+        sale.Items[1].IsCancelled.Should().BeFalse();
+        sale.TotalAmount.Should().Be(40m);
     }
 }

@@ -49,7 +49,27 @@ public class CartRepository(DefaultContext context) : ICartRepository
         "date" => desc ? query.ThenByDescending(x => x.Date) : query.ThenBy(x => x.Date),
         _ => desc ? query.ThenByDescending(x => x.Id) : query.ThenBy(x => x.Id)
     };
-    public async Task UpdateAsync(Cart cart, CancellationToken cancellationToken = default) { context.Carts.Update(cart); await context.SaveChangesAsync(cancellationToken); }
+    public async Task UpdateAsync(Cart cart, CancellationToken cancellationToken = default)
+    {
+        var current = await context.Carts
+            .Include(x => x.Items)
+            .FirstOrDefaultAsync(x => x.Id == cart.Id, cancellationToken);
+
+        if (current is null)
+            throw new KeyNotFoundException($"Cart {cart.Id} not found.");
+
+        current.UserId = cart.UserId;
+        current.Date = cart.Date;
+        context.CartItems.RemoveRange(current.Items);
+        current.Items.Clear();
+
+        foreach (var item in cart.Items)
+        {
+            current.AddItem(item.ProductId, item.Quantity);
+        }
+
+        await context.SaveChangesAsync(cancellationToken);
+    }
     public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
         var cart = await context.Carts.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);

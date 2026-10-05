@@ -69,5 +69,36 @@ public class SaleRepository(DefaultContext context) : ISaleRepository
         "status" => desc ? query.ThenByDescending(x => x.Status) : query.ThenBy(x => x.Status),
         _ => desc ? query.ThenByDescending(x => x.Id) : query.ThenBy(x => x.Id)
     };
-    public async Task UpdateAsync(Sale sale, CancellationToken cancellationToken = default) { context.Sales.Update(sale); await context.SaveChangesAsync(cancellationToken); }
+    public async Task UpdateAsync(Sale sale, CancellationToken cancellationToken = default)
+    {
+        var current = await context.Sales
+            .Include(x => x.Items)
+            .FirstOrDefaultAsync(x => x.Id == sale.Id, cancellationToken);
+
+        if (current is null)
+            throw new KeyNotFoundException($"Sale {sale.Id} not found.");
+
+        current.SaleNumber = sale.SaleNumber;
+        current.Date = sale.Date;
+        current.Customer.Id = sale.Customer.Id;
+        current.Customer.Description = sale.Customer.Description;
+        current.Branch.Id = sale.Branch.Id;
+        current.Branch.Description = sale.Branch.Description;
+
+        context.SaleItems.RemoveRange(current.Items);
+        current.Items.Clear();
+
+        foreach (var item in sale.Items)
+        {
+            current.AddItem(item.ProductId, item.ProductDescription, item.UnitPrice, item.Quantity);
+        }
+
+        await context.SaveChangesAsync(cancellationToken);
+
+        for (var index = 0; index < sale.Items.Count; index++)
+        {
+            sale.Items[index].Id = current.Items[index].Id;
+            sale.Items[index].SaleId = current.Id;
+        }
+    }
 }
