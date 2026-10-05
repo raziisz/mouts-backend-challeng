@@ -15,7 +15,6 @@ public class SaleRepository(DefaultContext context) : ISaleRepository
     {
         var query = context.Sales.Include(x => x.Items).AsNoTracking().AsQueryable();
         if (!string.IsNullOrWhiteSpace(request.SaleNumber)) query = ApplyTextFilter(query, request.SaleNumber);
-        if (request.CustomerId.HasValue) query = query.Where(x => x.Customer.Id == request.CustomerId.Value);
         if (!string.IsNullOrWhiteSpace(request.Status))
         {
             if (!Enum.TryParse<SaleStatus>(request.Status, ignoreCase: true, out var saleStatus)) return Task.FromResult(PagedResult<Sale>.Create([], 0, request.Page));

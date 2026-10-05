@@ -215,9 +215,9 @@ All endpoints except `POST /api/auth/login` require a valid JWT bearer token.
 
 | Role | Permissions |
 |---|---|
-| Customer | Read products; create and manage own carts; create sales and read own sales |
-| Manager | Customer permissions plus update and cancel sales, including sale items |
-| Admin | User CRUD, product CRUD, full catalog access and sale management |
+| Customer | Read products and create/manage own carts |
+| Manager | Customer permissions plus full Sales API access and sale item cancellation |
+| Admin | User CRUD, product CRUD, full catalog access and full Sales API access |
 
 Requests without a valid token return `401 AuthenticationError`. Authenticated
 users without the required role or ownership return `403 AuthorizationError`.

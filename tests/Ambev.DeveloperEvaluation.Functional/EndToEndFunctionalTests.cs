@@ -12,8 +12,8 @@ public sealed class EndToEndFunctionalTests(FunctionalApiFixture fixture)
     private static string AdminPassword =>
         Environment.GetEnvironmentVariable("FUNCTIONAL_ADMIN_PASSWORD") ?? "Admin@123";
 
-    [Fact(DisplayName = "Customer purchase journey should work end to end")]
-    public async Task Should_complete_customer_purchase_journey()
+    [Fact(DisplayName = "Catalog, cart and manager sale journey should work end to end")]
+    public async Task Should_complete_catalog_cart_and_manager_sale_journey()
     {
         var adminToken = await fixture.LoginAsync(AdminEmail, AdminPassword);
         var suffix = Guid.NewGuid().ToString("N")[..12];
@@ -81,7 +81,7 @@ public sealed class EndToEndFunctionalTests(FunctionalApiFixture fixture)
             using var createSale = await fixture.SendAsync(
                 HttpMethod.Post,
                 "/api/sales",
-                customerToken,
+                managerToken,
                 new
                 {
                     saleNumber = $"E2E-SALE-{suffix}",
@@ -103,10 +103,18 @@ public sealed class EndToEndFunctionalTests(FunctionalApiFixture fixture)
             }
 
             using var customerSales = await fixture.SendAsync(HttpMethod.Get, "/api/sales", customerToken);
-            Assert.Equal(HttpStatusCode.OK, customerSales.StatusCode);
+            await FunctionalApiFixture.AssertErrorResponseAsync(
+                customerSales,
+                HttpStatusCode.Forbidden,
+                "AuthorizationError",
+                "Access denied");
 
             using var customerSale = await fixture.SendAsync(HttpMethod.Get, $"/api/sales/{saleId}", customerToken);
-            Assert.Equal(HttpStatusCode.OK, customerSale.StatusCode);
+            await FunctionalApiFixture.AssertErrorResponseAsync(
+                customerSale,
+                HttpStatusCode.Forbidden,
+                "AuthorizationError",
+                "Access denied");
 
             using var forbiddenUpdate = await fixture.SendAsync(
                 HttpMethod.Put,

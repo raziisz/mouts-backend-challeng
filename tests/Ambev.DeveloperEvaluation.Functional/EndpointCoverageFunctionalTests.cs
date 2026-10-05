@@ -184,7 +184,7 @@ public sealed class EndpointCoverageFunctionalTests(FunctionalApiFixture fixture
             var managerToken = await fixture.LoginAsync($"{managerUsername}@localhost.com", "User@123");
 
             cartId = await CreateCartAsync(customerToken, customerId, cartDate);
-            saleId = await CreateSaleAsync(customerToken, customerId, productId, $"COVERAGE-SALE-{suffix}", saleDate);
+            saleId = await CreateSaleAsync(managerToken, customerId, productId, $"COVERAGE-SALE-{suffix}", saleDate);
 
             using var filteredCarts = await fixture.SendAsync(
                 HttpMethod.Get,

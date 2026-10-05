@@ -29,10 +29,17 @@ public sealed class SalesFunctionalTests(FunctionalApiFixture fixture)
             var customerToken = await fixture.LoginAsync($"{customerUsername}@localhost.com", "User@123");
             var managerToken = await fixture.LoginAsync($"{managerUsername}@localhost.com", "User@123");
 
+            using var customerSales = await fixture.SendAsync(HttpMethod.Get, "/api/sales", customerToken);
+            await FunctionalApiFixture.AssertErrorResponseAsync(
+                customerSales,
+                HttpStatusCode.Forbidden,
+                "AuthorizationError",
+                "Access denied");
+
             using var createResponse = await fixture.SendAsync(
                 HttpMethod.Post,
                 "/api/sales",
-                customerToken,
+                managerToken,
                 new
                 {
                     saleNumber = $"FUNCTIONAL-SALE-{suffix}",
@@ -55,6 +62,34 @@ public sealed class SalesFunctionalTests(FunctionalApiFixture fixture)
                 Assert.Equal(20m, created.GetProperty("products")[0].GetProperty("discountAmount").GetDecimal());
                 Assert.False(created.GetProperty("products")[0].GetProperty("isCancelled").GetBoolean());
             }
+
+            using var customerSale = await fixture.SendAsync(HttpMethod.Get, $"/api/sales/{saleId}", customerToken);
+            await FunctionalApiFixture.AssertErrorResponseAsync(
+                customerSale,
+                HttpStatusCode.Forbidden,
+                "AuthorizationError",
+                "Access denied");
+
+            using var customerCreate = await fixture.SendAsync(
+                HttpMethod.Post,
+                "/api/sales",
+                customerToken,
+                new
+                {
+                    saleNumber = $"FUNCTIONAL-SALE-CUSTOMER-{suffix}",
+                    date = DateTime.UtcNow,
+                    customer = new { id = customerId, description = "Functional customer" },
+                    branch = new { id = 1, description = "Functional branch" },
+                    products = new[]
+                    {
+                        new { productId, productDescription = "Functional product", unitPrice = 10m, quantity = 1 }
+                    }
+                });
+            await FunctionalApiFixture.AssertErrorResponseAsync(
+                customerCreate,
+                HttpStatusCode.Forbidden,
+                "AuthorizationError",
+                "Access denied");
 
             using var customerUpdate = await fixture.SendAsync(
                 HttpMethod.Put,
@@ -154,7 +189,7 @@ public sealed class SalesFunctionalTests(FunctionalApiFixture fixture)
             using var excessiveQuantityResponse = await fixture.SendAsync(
                 HttpMethod.Post,
                 "/api/sales",
-                customerToken,
+                managerToken,
                 new
                 {
                     saleNumber = $"FUNCTIONAL-SALE-INVALID-{suffix}",

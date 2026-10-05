@@ -112,8 +112,8 @@ public sealed class AuthorizationFunctionalTests(FunctionalApiFixture fixture)
         }
     }
 
-    [Fact(DisplayName = "Customers must only access their own carts and sales")]
-    public async Task Should_isolate_customer_purchases()
+    [Fact(DisplayName = "Customers can only access their own carts and cannot access sales")]
+    public async Task Should_enforce_cart_ownership_and_sales_roles()
     {
         var adminToken = await fixture.LoginAsync(AdminEmail, AdminPassword);
         var suffix = Guid.NewGuid().ToString("N")[..12];
@@ -131,11 +131,12 @@ public sealed class AuthorizationFunctionalTests(FunctionalApiFixture fixture)
         {
             var customerAToken = await fixture.LoginAsync($"{customerAUsername}@localhost.com", "User@123");
             var customerBToken = await fixture.LoginAsync($"{customerBUsername}@localhost.com", "User@123");
+            var managerToken = await fixture.LoginAsync(AdminEmail, AdminPassword);
 
             cartAId = await fixture.CreateCartAsync(customerAToken, customerAId);
             cartBId = await fixture.CreateCartAsync(customerBToken, customerBId);
-            saleAId = await fixture.CreateSaleAsync(customerAToken, customerAId, productId);
-            saleBId = await fixture.CreateSaleAsync(customerBToken, customerBId, productId);
+            saleAId = await fixture.CreateSaleAsync(managerToken, customerAId, productId);
+            saleBId = await fixture.CreateSaleAsync(managerToken, customerBId, productId);
 
             using var customerACarts = await fixture.SendAsync(HttpMethod.Get, "/api/carts", customerAToken);
             Assert.Equal(HttpStatusCode.OK, customerACarts.StatusCode);
@@ -150,16 +151,11 @@ public sealed class AuthorizationFunctionalTests(FunctionalApiFixture fixture)
             }
 
             using var customerASales = await fixture.SendAsync(HttpMethod.Get, "/api/sales", customerAToken);
-            Assert.Equal(HttpStatusCode.OK, customerASales.StatusCode);
-            using (var salesDocument = await FunctionalApiFixture.ReadDocumentAsync(customerASales))
-            {
-                var salesCustomerIds = salesDocument.RootElement.GetProperty("data")
-                    .EnumerateArray()
-                    .Select(sale => sale.GetProperty("customer").GetProperty("id").GetInt32())
-                    .ToArray();
-                Assert.Contains(customerAId, salesCustomerIds);
-                Assert.DoesNotContain(customerBId, salesCustomerIds);
-            }
+            await FunctionalApiFixture.AssertErrorResponseAsync(
+                customerASales,
+                HttpStatusCode.Forbidden,
+                "AuthorizationError",
+                "Access denied");
 
             using var otherCart = await fixture.SendAsync(HttpMethod.Get, $"/api/carts/{cartBId}", customerAToken);
             await FunctionalApiFixture.AssertErrorResponseAsync(
@@ -229,10 +225,10 @@ public sealed class AuthorizationFunctionalTests(FunctionalApiFixture fixture)
                 "Access denied");
 
             int saleBItemId;
-            using (var customerBSale = await fixture.SendAsync(HttpMethod.Get, $"/api/sales/{saleBId}", customerBToken))
+            using (var managerSale = await fixture.SendAsync(HttpMethod.Get, $"/api/sales/{saleBId}", managerToken))
             {
-                Assert.Equal(HttpStatusCode.OK, customerBSale.StatusCode);
-                using var saleDocument = await FunctionalApiFixture.ReadDocumentAsync(customerBSale);
+                Assert.Equal(HttpStatusCode.OK, managerSale.StatusCode);
+                using var saleDocument = await FunctionalApiFixture.ReadDocumentAsync(managerSale);
                 saleBItemId = saleDocument.RootElement.GetProperty("products")[0].GetProperty("id").GetInt32();
             }
 

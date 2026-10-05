@@ -102,39 +102,32 @@ public sealed class CartRequest
 }
 
 [ApiController]
-[Authorize]
+[Authorize(Roles = "Admin,Manager")]
 [Route("api/sales")]
 public class SalesController(IMediator mediator) : ControllerBase
 {
     [HttpGet] public async Task<IActionResult> List([FromQuery(Name = "_page")] int page = 1, [FromQuery(Name = "_size")] int size = 10, [FromQuery(Name = "_order")] string? order = null, string? saleNumber = null, string? status = null, DateTime? date = null, DateTime? _minDate = null, DateTime? _maxDate = null, CancellationToken cancellationToken = default)
     {
-        int? customerId = User.IsPrivileged() ? null : User.GetRequiredUserId();
-        return Ok(await mediator.Send(new GetSalesQuery(page, size, order, saleNumber, status, date, _minDate, _maxDate, customerId), cancellationToken));
+        return Ok(await mediator.Send(new GetSalesQuery(page, size, order, saleNumber, status, date, _minDate, _maxDate), cancellationToken));
     }
     [HttpGet("{id:int}")] public async Task<IActionResult> Get(int id, CancellationToken cancellationToken)
     {
-        var result = await mediator.Send(new GetSaleQuery(id), cancellationToken);
-        if (!User.IsPrivileged() && result.Customer.Id != User.GetRequiredUserId()) return Forbid();
-        return Ok(result);
+        return Ok(await mediator.Send(new GetSaleQuery(id), cancellationToken));
     }
 
     [HttpPost] public async Task<IActionResult> Create(SaleRequest request, CancellationToken cancellationToken)
     {
-        if (!User.IsPrivileged() && request.Customer?.Id != User.GetRequiredUserId()) return Forbid();
         var result = await mediator.Send(request.ToCreate(), cancellationToken);
         return CreatedAtAction(nameof(Get), new { id = result.Id }, result);
     }
 
     [HttpPut("{id:int}")]
-    [Authorize(Roles = "Admin,Manager")]
     public async Task<IActionResult> Update(int id, SaleRequest request, CancellationToken cancellationToken) => Ok(await mediator.Send(request.ToUpdate(id), cancellationToken));
 
     [HttpDelete("{id:int}")]
-    [Authorize(Roles = "Admin,Manager")]
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken) => Ok(await mediator.Send(new CancelSaleCommand(id), cancellationToken));
 
     [HttpPatch("{saleId:int}/items/{itemId:int}/cancel")]
-    [Authorize(Roles = "Admin,Manager")]
     public async Task<IActionResult> CancelItem(int saleId, int itemId, CancellationToken cancellationToken) => Ok(await mediator.Send(new CancelSaleItemCommand(saleId, itemId), cancellationToken));
 
 }

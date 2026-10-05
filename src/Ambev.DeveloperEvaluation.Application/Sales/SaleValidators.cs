@@ -51,7 +51,6 @@ public sealed class GetSalesQueryValidator : AbstractValidator<GetSalesQuery>
     {
         RuleFor(query => query.Page).GreaterThan(0);
         RuleFor(query => query.Size).InclusiveBetween(1, 100);
-        RuleFor(query => query.CustomerId).GreaterThan(0).When(query => query.CustomerId.HasValue);
         RuleFor(query => query.Status)
             .Must(status => Enum.TryParse<SaleStatus>(status, true, out _))
             .When(query => !string.IsNullOrWhiteSpace(query.Status));

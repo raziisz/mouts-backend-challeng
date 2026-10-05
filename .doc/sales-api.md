@@ -2,10 +2,9 @@
 
 ### Sales
 
-All sales endpoints require authentication. Customers can create sales only for
-themselves and can list or retrieve only their own sales. Admins and Managers
-can access all sales and can update or cancel them. Sale item cancellation is
-also restricted to Admins and Managers.
+All sales endpoints require the `Admin` or `Manager` role. The `customer` field
+is an external identity belonging to the sale and is not the authenticated API
+user. Customers do not access the Sales API.
 
 #### GET /api/sales
 
@@ -55,7 +54,7 @@ also restricted to Admins and Managers.
 #### POST /api/sales
 
 - Description: Create a sale
-- Permissions: Authenticated users; Customers must use their own customer ID
+- Permissions: `Admin` or `Manager`
 - Request Body:
   ```json
   {
@@ -78,7 +77,7 @@ also restricted to Admins and Managers.
 #### GET /api/sales/{id}
 
 - Description: Retrieve a sale by ID
-- Permissions: Customers can retrieve only their own sale; Admins and Managers can retrieve any sale
+- Permissions: `Admin` or `Manager`
 - Path Parameters:
   - `id`: Sale ID
 - Response: A sale object in the same format returned by the list endpoint.
